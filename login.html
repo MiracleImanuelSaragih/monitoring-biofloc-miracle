@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Login — STRONG DAILY FLOW</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#ff6b00"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK v8 -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --card: #13131c;
+      --border: #1f1f2e;
+      --input-bg: #1a1a27;
+      --accent: #ff6b00;
+      --text: #f0f0f5;
+      --text-dim: #6b7280;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background grid glow */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,107,0,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 80% 100%, rgba(255,107,0,0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Logo area */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 36px;
+      animation: slideDown 0.5s ease-out;
+    }
+    .logo-icon {
+      font-size: 52px;
+      line-height: 1;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 20px rgba(255,107,0,0.5));
+    }
+    .logo-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: var(--text);
+    }
+    .logo-title span { color: var(--accent); }
+    .logo-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* Card */
+    .login-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 380px;
+      animation: slideUp 0.5s ease-out;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Tabs */
+    .tab-row {
+      display: flex;
+      background: var(--input-bg);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 9px;
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Form */
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .form-input {
+      width: 100%;
+      padding: 13px 16px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(255,107,0,0.04);
+      box-shadow: 0 0 0 3px rgba(255,107,0,0.1);
+    }
+    .form-input::placeholder { color: var(--text-dim); }
+
+    /* Password wrapper */
+    .pw-wrap { position: relative; }
+    .pw-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 10px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 6px;
+    }
+    .btn-submit:hover { background: #e05a00; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled {
+      background: #2d2d3f;
+      color: var(--text-dim);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Status message */
+    .status-msg {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+    .status-msg.error { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); display: block; }
+    .status-msg.success { background: rgba(34,197,94,0.12); color: var(--green); border: 1px solid rgba(34,197,94,0.3); display: block; }
+    .status-msg.info { background: rgba(255,107,0,0.1); color: var(--accent); border: 1px solid rgba(255,107,0,0.3); display: block; }
+
+    /* Loading spinner */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Register note */
+    .register-note {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+
+    /* Offline badge */
+    .offline-badge {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #292935;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 11px;
+      color: var(--text-dim);
+      display: none;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="offline-badge" id="offlineBadge">📵 Mode Offline</div>
+
+<div class="logo-area">
+  <div class="logo-icon">🏋️</div>
+  <h1 class="logo-title">STRONG <span>DAILY FLOW</span></h1>
+  <p class="logo-sub">PERSONAL FITNESS TRACKER</p>
+</div>
+
+<div class="login-card">
+  <!-- Tab Login / Daftar -->
+  <div class="tab-row">
+    <button class="tab-btn active" id="tabLogin" onclick="switchMode('login')">MASUK</button>
+    <button class="tab-btn" id="tabRegister" onclick="switchMode('register')">DAFTAR</button>
+  </div>
+
+  <!-- Username -->
+  <div class="form-group">
+    <label class="form-label">Username</label>
+    <input class="form-input" type="text" id="usernameInput"
+      placeholder="Masukkan username kamu" autocomplete="username"
+      onkeydown="if(event.key==='Enter')focusPassword()">
+  </div>
+
+  <!-- Password -->
+  <div class="form-group">
+    <label class="form-label">Password</label>
+    <div class="pw-wrap">
+      <input class="form-input" type="password" id="passwordInput"
+        placeholder="Masukkan password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')handleAuth()">
+      <button class="pw-toggle" onclick="togglePassword()" id="pwToggle">👁</button>
+    </div>
+  </div>
+
+  <!-- Konfirmasi password (hanya saat daftar) -->
+  <div class="form-group" id="confirmGroup" style="display:none;">
+    <label class="form-label">Konfirmasi Password</label>
+    <div class="pw-wrap">
+      <input class="form-input" type="password" id="confirmInput"
+        placeholder="Ulangi password" autocomplete="new-password"
+        onkeydown="if(event.key==='Enter')handleAuth()">
+    </div>
+  </div>
+
+  <button class="btn-submit" id="submitBtn" onclick="handleAuth()">
+    MASUK
+  </button>
+
+  <div class="status-msg" id="statusMsg"></div>
+
+  <p class="register-note" id="loginNote">
+    Belum punya akun? Klik tab <b>DAFTAR</b> untuk buat akun baru.<br>
+    Kamu bisa bagikan username & password ke teman.
+  </p>
+  <p class="register-note" id="registerNote" style="display:none;">
+    Buat akun sekali, lalu bagikan ke teman yang ingin ikut akses.
+  </p>
+</div>
+
+<script>
+// ── Firebase Config ───────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAcnTpDBXO2WpXs3ri21SXJfzUMC_xkCkU",
+  authDomain: "premium-todo-list.firebaseapp.com",
+  projectId: "premium-todo-list",
+  storageBucket: "premium-todo-list.appspot.com",
+  messagingSenderId: "630693485104",
+  appId: "1:630693485104:web:820a99e6af935a7345abf5"
+};
+
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// Cek kalau sudah login → langsung ke app
+auth.onAuthStateChanged(user => {
+  if (user) {
+    window.location.replace('./index.html');
+  }
+});
+
+// Offline detection
+window.addEventListener('offline', () => {
+  document.getElementById('offlineBadge').style.display = 'block';
+});
+window.addEventListener('online', () => {
+  document.getElementById('offlineBadge').style.display = 'none';
+});
+if (!navigator.onLine) {
+  document.getElementById('offlineBadge').style.display = 'block';
+}
+
+// ── Mode: Login / Register ────────────────────────────────
+let currentMode = 'login';
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
+  document.getElementById('confirmGroup').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('submitBtn').textContent = mode === 'login' ? 'MASUK' : 'BUAT AKUN';
+  document.getElementById('loginNote').style.display = mode === 'login' ? 'block' : 'none';
+  document.getElementById('registerNote').style.display = mode === 'register' ? 'block' : 'none';
+  clearStatus();
+}
+
+// ── Helper ────────────────────────────────────────────────
+function usernameToEmail(username) {
+  // Convert username → email format untuk Firebase Auth
+  return username.toLowerCase().trim().replace(/\s+/g, '_') + '@strongdailyflow.app';
+}
+
+function setStatus(msg, type) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg ' + type;
+}
+function clearStatus() {
+  document.getElementById('statusMsg').className = 'status-msg';
+}
+function setLoading(yes) {
+  const btn = document.getElementById('submitBtn');
+  if (yes) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Memproses...';
+  } else {
+    btn.disabled = false;
+    btn.textContent = currentMode === 'login' ? 'MASUK' : 'BUAT AKUN';
+  }
+}
+
+function focusPassword() {
+  document.getElementById('passwordInput').focus();
+}
+function togglePassword() {
+  const inp = document.getElementById('passwordInput');
+  const btn = document.getElementById('pwToggle');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+
+// ── Auth Handler ──────────────────────────────────────────
+function handleAuth() {
+  const username = document.getElementById('usernameInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  const confirm  = document.getElementById('confirmInput').value;
+
+  if (!username) return setStatus('⚠️ Username wajib diisi.', 'error');
+  if (username.length < 3) return setStatus('⚠️ Username minimal 3 karakter.', 'error');
+  if (!password) return setStatus('⚠️ Password wajib diisi.', 'error');
+  if (password.length < 6) return setStatus('⚠️ Password minimal 6 karakter.', 'error');
+
+  if (currentMode === 'register') {
+    if (!confirm) return setStatus('⚠️ Konfirmasi password wajib diisi.', 'error');
+    if (password !== confirm) return setStatus('⚠️ Password tidak cocok.', 'error');
+    doRegister(username, password);
+  } else {
+    doLogin(username, password);
+  }
+}
+
+function doLogin(username, password) {
+  setLoading(true);
+  clearStatus();
+  const email = usernameToEmail(username);
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      setStatus('✅ Berhasil masuk! Mengalihkan...', 'success');
+      setTimeout(() => window.location.replace('./index.html'), 800);
+    })
+    .catch(err => {
+      setLoading(false);
+      if (err.code === 'auth/user-not-found') {
+        setStatus('❌ Username tidak ditemukan. Coba tab DAFTAR.', 'error');
+      } else if (err.code === 'auth/wrong-password') {
+        setStatus('❌ Password salah. Coba lagi.', 'error');
+      } else if (err.code === 'auth/network-request-failed') {
+        setStatus('📵 Tidak ada koneksi internet.', 'error');
+      } else {
+        setStatus('❌ ' + err.message, 'error');
+      }
+    });
+}
+
+function doRegister(username, password) {
+  setLoading(true);
+  clearStatus();
+  const email = usernameToEmail(username);
+
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(cred => {
+      // Simpan display name
+      return cred.user.updateProfile({ displayName: username });
+    })
+    .then(() => {
+      setStatus('✅ Akun berhasil dibuat! Mengalihkan...', 'success');
+      setTimeout(() => window.location.replace('./index.html'), 800);
+    })
+    .catch(err => {
+      setLoading(false);
+      if (err.code === 'auth/email-already-in-use') {
+        setStatus('❌ Username sudah dipakai. Coba nama lain atau tab MASUK.', 'error');
+      } else if (err.code === 'auth/network-request-failed') {
+        setStatus('📵 Tidak ada koneksi internet. Tidak bisa daftar offline.', 'error');
+      } else {
+        setStatus('❌ ' + err.message, 'error');
+      }
+    });
+}
+</script>
+</body>
+</html>
