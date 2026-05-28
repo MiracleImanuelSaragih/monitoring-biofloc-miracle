@@ -1,336 +1,452 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <title>DAILY OVERCOMER</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>STRONG DAILY FLOW</title>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#ff6b00"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
     :root {
-      --bg:#0a0a0f; --card:#13131c; --bg-input:#1a1a27;
-      --accent:#ff6b00; --accent-dim:rgba(255,107,0,0.13);
-      --text:#f0f0f5; --text-dim:#6b7280; --border:#1f1f2e;
-      --green:#22c55e; --red:#ef4444; --blue:#3b82f6;
+      --bg-main: #0a0a0f;
+      --bg-card: #13131c;
+      --bg-input: #1a1a27;
+      --accent: #ff6b00;
+      --accent-dim: rgba(255,107,0,0.15);
+      --accent-glow: 0 0 20px rgba(255,107,0,0.4);
+      --text: #f0f0f5;
+      --text-dim: #6b7280;
+      --border: #1f1f2e;
+      --green: #22c55e;
+      --red: #ef4444;
     }
-    *{box-sizing:border-box;}
-    #authGate{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
-    #authGate .ag-spin{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-    #authGate .ag-ttl{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;letter-spacing:3px;color:var(--text);margin-top:14px;}
-    #authGate .ag-ttl span{color:var(--accent);}
-    @keyframes spin{to{transform:rotate(360deg);}}
 
-    body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0 0 90px;min-height:100vh;}
-    body.hidden{overflow:hidden;}
+    * { box-sizing: border-box; }
 
-    /* HEADER */
-    .header{background:var(--card);padding:11px 14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:200;border-bottom:1px solid var(--border);}
-    .header-left{display:flex;align-items:center;gap:8px;min-width:0;}
-    .header-title{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:2px;margin:0;white-space:nowrap;}
-    .header-title span{color:var(--accent);}
-    .user-badge{font-size:11px;color:var(--text-dim);background:var(--bg-input);padding:3px 9px;border-radius:20px;border:1px solid var(--border);white-space:nowrap;}
-    .header-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+    /* Auth loading screen */
+    #authGate {
+      position: fixed; inset: 0;
+      background: var(--bg-main);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #authGate .ag-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px; font-weight: 800;
+      letter-spacing: 3px; color: var(--text); margin-top: 16px;
+    }
+    #authGate .ag-title span { color: var(--accent); }
+    #authGate .ag-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Lang toggle */
-    .lang-toggle{display:flex;background:var(--bg-input);border:1px solid var(--border);border-radius:16px;padding:2px;gap:2px;}
-    .lang-btn{background:none;border:none;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;padding:4px 9px;border-radius:13px;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
-    .lang-btn.active{background:var(--accent);color:white;}
+    body {
+      font-family: 'Barlow', sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text);
+      margin: 0; padding: 0;
+      padding-bottom: 90px;
+      min-height: 100vh;
+    }
+    body.hidden { overflow: hidden; }
+
+    /* ── HEADER ── */
+    .header {
+      background: var(--bg-card);
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky; top: 0; z-index: 200;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 20px; font-weight: 800; letter-spacing: 2px; margin: 0;
+    }
+    .header-title span { color: var(--accent); }
+    .user-badge {
+      font-size: 11px; color: var(--text-dim);
+      background: var(--bg-input);
+      padding: 3px 10px; border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    /* Offline banner */
+    .offline-bar {
+      background: #292935; border-bottom: 1px solid var(--border);
+      text-align: center; padding: 6px;
+      font-size: 11px; color: var(--text-dim);
+      display: none;
+    }
+    .offline-bar.show { display: block; }
 
     /* Bell */
-    .bell-btn{background:none;border:2px solid var(--border);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;transition:all .3s;position:relative;}
-    .bell-btn.bell-off{border-color:var(--border);filter:grayscale(1);opacity:.5;}
-    .bell-btn.bell-on{border-color:var(--accent);box-shadow:0 0 16px rgba(255,107,0,.45);animation:bpulse 2s infinite;}
-    .bell-btn.bell-on::after{content:'';position:absolute;top:-2px;right:-2px;width:9px;height:9px;background:var(--green);border-radius:50%;border:2px solid var(--bg);}
-    @keyframes bpulse{0%,100%{box-shadow:0 0 8px rgba(255,107,0,.4);}50%{box-shadow:0 0 22px rgba(255,107,0,.8);}}
+    .bell-btn {
+      background: none; border: 2px solid var(--border);
+      border-radius: 50%; width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; transition: all 0.3s; position: relative;
+    }
+    .bell-btn.bell-off { border-color: var(--border); filter: grayscale(1); opacity: 0.5; }
+    .bell-btn.bell-on { border-color: var(--accent); box-shadow: var(--accent-glow); animation: bell-pulse 2s infinite; }
+    .bell-btn.bell-on::after {
+      content: ''; position: absolute; top: -2px; right: -2px;
+      width: 9px; height: 9px; background: var(--green);
+      border-radius: 50%; border: 2px solid var(--bg-main);
+    }
+    @keyframes bell-pulse {
+      0%,100% { box-shadow: 0 0 8px rgba(255,107,0,0.4); }
+      50% { box-shadow: 0 0 22px rgba(255,107,0,0.8); }
+    }
 
-    .logout-btn{background:none;border:1px solid var(--border);border-radius:7px;padding:5px 9px;color:var(--text-dim);font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;}
-    .logout-btn:hover{border-color:var(--red);color:var(--red);}
+    /* Logout btn */
+    .logout-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 10px;
+      color: var(--text-dim); font-size: 11px;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
 
-    .offline-bar{background:#1e1e28;border-bottom:1px solid var(--border);text-align:center;padding:5px;font-size:11px;color:var(--text-dim);display:none;}
-    .offline-bar.show{display:block;}
+    /* ── PAGES ── */
+    .page { display: none; padding: 14px; }
+    .page.active { display: block; animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 
-    /* PAGES */
-    .page{display:none;padding:13px;}
-    .page.active{display:block;animation:fadeIn .2s ease-out;}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+    /* ── CARDS ── */
+    .card { background: var(--bg-card); border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
+    .card-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:0.5px; margin:0 0 12px; }
 
-    /* CARDS */
-    .card{background:var(--card);border-radius:13px;padding:15px;margin-bottom:13px;border:1px solid var(--border);}
-    .card-title{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:.4px;margin:0 0 12px;}
+    /* ── INPUTS ── */
+    .input-group { display:flex; flex-direction:column; gap:9px; }
+    .input-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    input[type="time"], input[type="text"], input[type="number"] {
+      width:100%; padding:11px 13px;
+      background:var(--bg-input); border:1px solid var(--border);
+      border-radius:10px; color:var(--text);
+      font-family:'Barlow',sans-serif; font-size:14px; transition:border-color 0.2s;
+    }
+    input:focus { outline:none; border-color:var(--accent); background:rgba(255,107,0,0.04); }
+    input[type="file"] {
+      width:100%; padding:10px 13px;
+      background:var(--bg-input); border:1px solid var(--border);
+      border-radius:10px; color:var(--text-dim); font-size:13px; cursor:pointer;
+    }
 
-    /* INPUTS */
-    .input-group{display:flex;flex-direction:column;gap:9px;}
-    .input-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
-    input[type="time"],input[type="text"],input[type="number"]{width:100%;padding:10px 13px;background:var(--bg-input);border:1px solid var(--border);border-radius:9px;color:var(--text);font-family:'Barlow',sans-serif;font-size:14px;transition:border-color .2s;}
-    input:focus{outline:none;border-color:var(--accent);background:rgba(255,107,0,.04);}
-    .btn-primary{width:100%;background:var(--accent);color:white;border:none;padding:12px;border-radius:9px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;margin-top:3px;}
-    .btn-primary:hover{background:#e05a00;transform:translateY(-1px);}
-    .btn-primary:disabled{background:#2d2d3f;color:var(--text-dim);cursor:not-allowed;transform:none;}
+    /* ── BUTTONS ── */
+    .btn-primary {
+      width:100%; background:var(--accent); color:white; border:none;
+      padding:12px; border-radius:10px;
+      font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px;
+      cursor:pointer; transition:all 0.2s; margin-top:3px;
+    }
+    .btn-primary:hover { background:#e05a00; transform:translateY(-1px); }
+    .btn-primary:disabled { background:#2d2d3f; color:var(--text-dim); cursor:not-allowed; transform:none; }
 
-    /* TOAST */
-    #toast{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-14px);background:var(--green);color:white;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:300;white-space:nowrap;pointer-events:none;}
-    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-    #toast.error{background:var(--red);}
+    /* Toast */
+    #toast {
+      position:fixed; top:68px; left:50%; transform:translateX(-50%) translateY(-16px);
+      background:var(--green); color:white; padding:9px 18px;
+      border-radius:20px; font-size:13px; font-weight:600;
+      opacity:0; transition:all 0.3s; z-index:300; white-space:nowrap; pointer-events:none;
+    }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    #toast.error { background:var(--red); }
 
-    .loading-state{text-align:center;padding:26px;color:var(--text-dim);font-size:12px;}
-    .loading-spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 9px;}
+    /* Loading state */
+    .loading-state { text-align:center; padding:28px; color:var(--text-dim); font-size:13px; }
+    .loading-spinner {
+      width:26px; height:26px; border:2px solid var(--border);
+      border-top-color:var(--accent); border-radius:50%;
+      animation:spin 0.8s linear infinite; margin:0 auto 10px;
+    }
 
-    /* PAGE 1 - TASKS */
-    .task-card{background:var(--bg-input);padding:11px 13px;border-radius:10px;margin-bottom:8px;border-left:4px solid var(--accent);display:flex;align-items:center;gap:9px;transition:all .25s;}
-    .task-card.completed{opacity:.3;border-left-color:#2d2d3f;}
-    .task-card input[type="checkbox"]{width:20px;height:20px;min-width:20px;accent-color:var(--accent);cursor:pointer;}
-    .task-info{flex:1;cursor:pointer;min-width:0;}
-    .task-info h4{margin:0 0 2px;font-size:13px;font-family:'Barlow Condensed',sans-serif;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .task-card.completed .task-info h4{text-decoration:line-through;color:var(--text-dim);}
-    .task-info p{margin:0;font-size:11px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .task-time-badge{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap;}
-    .delete-btn{background:none;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:3px;border-radius:5px;transition:all .2s;flex-shrink:0;}
-    .delete-btn:hover{color:var(--red);background:rgba(239,68,68,.1);}
-    .empty-state{text-align:center;padding:26px 14px;color:var(--text-dim);}
-    .empty-state .ei{font-size:32px;margin-bottom:7px;}
-    .empty-state p{font-size:12px;margin:0;}
-    .progress-header{display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px;}
-    .progress-bar-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:12px;}
-    .progress-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .5s;}
+    /* ── TASK CARDS ── */
+    .task-card {
+      background:var(--bg-input); padding:12px 14px; border-radius:11px;
+      margin-bottom:9px; border-left:4px solid var(--accent);
+      display:flex; align-items:center; gap:10px; transition:all 0.25s;
+    }
+    .task-card.completed { opacity:0.33; border-left-color:#2d2d3f; }
+    .task-card input[type="checkbox"] { width:20px; height:20px; min-width:20px; accent-color:var(--accent); cursor:pointer; }
+    .task-info { flex:1; cursor:pointer; min-width:0; }
+    .task-info h4 {
+      margin:0 0 2px; font-size:14px;
+      font-family:'Barlow Condensed',sans-serif; font-weight:600;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .task-card.completed .task-info h4 { text-decoration:line-through; color:var(--text-dim); }
+    .task-info p { margin:0; font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .task-time-badge { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:var(--accent); white-space:nowrap; }
+    .delete-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:3px; border-radius:6px; transition:all 0.2s; flex-shrink:0; }
+    .delete-btn:hover { color:var(--red); background:rgba(239,68,68,0.1); }
 
-    /* PAGE 2 - PROGRESS */
-    /* Weight current display */
-    .weight-display{background:var(--accent-dim);border:1px solid rgba(255,107,0,.3);border-radius:11px;padding:13px;text-align:center;margin-top:8px;}
-    .wd-label{font-size:10px;color:var(--text-dim);margin-bottom:2px;letter-spacing:1px;}
-    .wd-value{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--accent);}
-    .wd-target{font-size:12px;color:var(--text-dim);margin-top:1px;}
-    .wd-synced{font-size:10px;color:var(--green);margin-top:5px;}
+    .empty-state { text-align:center; padding:28px 16px; color:var(--text-dim); }
+    .empty-state .ei { font-size:34px; margin-bottom:8px; }
+    .empty-state p { font-size:12px; margin:0; }
 
-    /* Weight diff badge */
-    .wd-diff{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:5px;}
-    .wd-diff.pos{background:rgba(34,197,94,.15);color:var(--green);}
-    .wd-diff.neg{background:rgba(239,68,68,.15);color:var(--red);}
+    .progress-header { display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-bottom:6px; }
+    .progress-bar-track { height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:14px; }
+    .progress-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.5s; }
 
-    /* Weight log table */
-    .log-section-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--text-dim);letter-spacing:.5px;margin:14px 0 8px;display:flex;justify-content:space-between;align-items:center;}
-    .log-clear-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;padding:3px 9px;cursor:pointer;transition:all .2s;}
-    .log-clear-btn:hover{border-color:var(--red);color:var(--red);}
-    .weight-log-list{display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;}
-    .weight-log-item{background:var(--bg-input);border-radius:9px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);}
-    .wli-left{}
-    .wli-date{font-size:11px;color:var(--text-dim);margin-bottom:2px;}
-    .wli-weight{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);}
-    .wli-target{font-size:11px;color:var(--text-dim);}
-    .wli-right{text-align:right;}
-    .wli-diff{font-size:12px;font-weight:700;}
-    .wli-diff.up{color:var(--green);}
-    .wli-diff.down{color:var(--red);}
-    .wli-diff.same{color:var(--text-dim);}
+    /* ── PAGE 2 ── */
+    .weight-display {
+      background:var(--accent-dim); border:1px solid rgba(255,107,0,0.3);
+      border-radius:11px; padding:14px; text-align:center; margin-top:8px;
+    }
+    .wd-label { font-size:11px; color:var(--text-dim); margin-bottom:3px; letter-spacing:1px; }
+    .wd-value { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:800; color:var(--accent); }
+    .wd-target { font-size:12px; color:var(--text-dim); margin-top:2px; }
+    .wd-synced { font-size:10px; color:var(--green); margin-top:5px; }
 
-    /* Photo upload */
-    .photo-upload-label{display:block;width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;color:var(--text-dim);font-size:13px;cursor:pointer;transition:all .2s;}
-    .photo-upload-label:hover{border-color:var(--accent);color:var(--accent);}
-    #photoInput{display:none;}
+    .photo-upload-label {
+      display:block; width:100%; background:var(--bg-input);
+      border:1px solid var(--border); border-radius:10px;
+      padding:11px; text-align:center; color:var(--text-dim);
+      font-size:13px; cursor:pointer; transition:all 0.2s;
+    }
+    .photo-upload-label:hover { border-color:var(--accent); color:var(--accent); }
+    #photoInput { display:none; }
+    .photo-container {
+      width:100%; min-height:200px; background:var(--bg-input);
+      border-radius:11px; border:2px dashed var(--border);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; margin-top:10px; transition:border-color 0.3s;
+    }
+    .photo-placeholder { text-align:center; color:var(--text-dim); pointer-events:none; }
+    .photo-placeholder .pi { font-size:38px; margin-bottom:6px; }
+    .photo-placeholder p { font-size:11px; margin:0; }
+    #photoDisplay { width:100%; max-height:420px; object-fit:cover; display:none; border-radius:9px; }
 
-    /* Photo gallery */
-    .photo-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;}
-    .photo-item{position:relative;border-radius:10px;overflow:hidden;background:var(--bg-input);border:1px solid var(--border);aspect-ratio:1;cursor:pointer;transition:transform .2s;}
-    .photo-item:hover{transform:scale(1.02);}
-    .photo-item img{width:100%;height:100%;object-fit:cover;}
-    .photo-item .pi-date{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:6px 8px 5px;font-size:10px;color:rgba(255,255,255,.8);}
-    .photo-item .pi-del{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);border:none;border-radius:50%;width:22px;height:22px;color:white;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;}
-    .photo-item:hover .pi-del{opacity:1;}
-    .photo-empty{text-align:center;padding:28px 14px;color:var(--text-dim);font-size:12px;}
+    /* ── PAGE 3 ── */
+    .day-btn {
+      width:100%; background:var(--bg-input); color:var(--text);
+      border:1px solid var(--border); padding:13px 15px; border-radius:10px;
+      text-align:left; font-family:'Barlow Condensed',sans-serif;
+      font-size:15px; font-weight:600; letter-spacing:0.5px;
+      margin-bottom:5px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;
+    }
+    .day-btn:hover { border-color:var(--accent); background:var(--accent-dim); }
+    .day-btn.open { border-color:var(--accent); color:var(--accent); }
+    .day-btn .chevron { transition:transform 0.3s; font-style:normal; font-size:11px; }
+    .day-btn.open .chevron { transform:rotate(180deg); }
+    .day-content {
+      display:none; background:rgba(255,107,0,0.04);
+      border:1px solid rgba(255,107,0,0.2); border-radius:10px;
+      padding:12px; margin-bottom:8px;
+    }
+    .day-content.open { display:block; animation:fadeIn 0.2s ease-out; }
+    .workout-item {
+      padding:9px 0; border-bottom:1px solid var(--border); font-size:13px;
+      line-height:1.5; display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start;
+    }
+    .workout-item:last-child { border-bottom:none; padding-bottom:0; }
+    .workout-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--accent); line-height:1.2; min-width:22px; }
+    .workout-text b { color:var(--text); display:block; font-size:14px; margin-bottom:1px; }
+    .workout-text span { color:var(--text-dim); font-size:11px; }
+    .sets-badge {
+      display:inline-block; background:var(--accent-dim);
+      border:1px solid rgba(255,107,0,0.3); color:var(--accent);
+      font-size:10px; font-weight:600; padding:1px 7px; border-radius:20px; margin-right:5px;
+    }
+    .rest-day { text-align:center; padding:14px 0; color:var(--text-dim); font-size:13px; line-height:1.6; }
+    .rest-day .ri { font-size:34px; margin-bottom:6px; }
 
-    /* Lightbox */
-    .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
-    .lightbox.open{display:flex;}
-    .lightbox img{max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain;}
-    .lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:36px;height:36px;color:white;font-size:18px;cursor:pointer;}
-    .lightbox-caption{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:white;padding:6px 16px;border-radius:20px;font-size:12px;white-space:nowrap;}
-
-    /* PAGE 3 */
-    .day-btn{width:100%;background:var(--bg-input);color:var(--text);border:1px solid var(--border);padding:12px 14px;border-radius:9px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:600;letter-spacing:.4px;margin-bottom:5px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:all .2s;}
-    .day-btn:hover,.day-btn.open{border-color:var(--accent);}
-    .day-btn.open{color:var(--accent);}
-    .day-btn .chevron{transition:transform .3s;font-style:normal;font-size:10px;}
-    .day-btn.open .chevron{transform:rotate(180deg);}
-    .day-content{display:none;background:rgba(255,107,0,.04);border:1px solid rgba(255,107,0,.2);border-radius:9px;padding:11px;margin-bottom:7px;}
-    .day-content.open{display:block;animation:fadeIn .2s ease-out;}
-    .workout-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;display:grid;grid-template-columns:auto 1fr;gap:9px;align-items:start;}
-    .workout-item:last-child{border-bottom:none;padding-bottom:0;}
-    .workout-num{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:var(--accent);line-height:1.2;min-width:20px;}
-    .workout-text b{color:var(--text);display:block;font-size:14px;margin-bottom:1px;}
-    .workout-text span{color:var(--text-dim);font-size:11px;}
-    .sets-badge{display:inline-block;background:var(--accent-dim);border:1px solid rgba(255,107,0,.3);color:var(--accent);font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px;margin-right:4px;}
-    .rest-day{text-align:center;padding:12px 0;color:var(--text-dim);font-size:13px;line-height:1.6;}
-    .rest-day .ri{font-size:32px;margin-bottom:6px;}
-
-    /* BOTTOM NAV */
-    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;justify-content:space-around;padding:9px 0 13px;border-top:1px solid var(--border);z-index:200;}
-    .nav-item{background:none;border:none;color:var(--text-dim);font-family:'Barlow',sans-serif;font-size:10px;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:3px 16px;border-radius:8px;transition:all .2s;}
-    .nav-item .ni{font-size:18px;line-height:1;}
-    .nav-item.active{color:var(--accent);}
-    .nav-item.active .ni{filter:drop-shadow(0 0 4px rgba(255,107,0,.6));}
+    /* ── BOTTOM NAV ── */
+    .bottom-nav {
+      position:fixed; bottom:0; left:0; right:0;
+      background:var(--bg-card); display:flex; justify-content:space-around;
+      padding:10px 0 13px; border-top:1px solid var(--border); z-index:200;
+    }
+    .nav-item {
+      background:none; border:none; color:var(--text-dim);
+      font-family:'Barlow',sans-serif; font-size:10px; font-weight:500;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      cursor:pointer; padding:3px 18px; border-radius:8px; transition:all 0.2s;
+    }
+    .nav-item .ni { font-size:19px; line-height:1; }
+    .nav-item.active { color:var(--accent); }
+    .nav-item.active .ni { filter:drop-shadow(0 0 4px rgba(255,107,0,0.6)); }
   </style>
 </head>
 <body class="hidden">
 
+<!-- Auth Loading Gate -->
 <div id="authGate">
-  <div class="ag-spin"></div>
-  <p class="ag-ttl">DAILY<span>OVERCOMER</span></p>
+  <div class="ag-spinner"></div>
+  <p class="ag-title">STRONG <span>DAILY FLOW</span></p>
 </div>
 
-<!-- Lightbox -->
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
-  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightboxImg" src="" alt="">
-  <div class="lightbox-caption" id="lightboxCaption"></div>
-</div>
-
+<!-- Toast -->
 <div id="toast"></div>
-<div class="offline-bar" id="offlineBar">📵 <span data-i="offlineMsg">Mode Offline — Data tersimpan lokal</span></div>
 
-<!-- HEADER -->
+<!-- Offline bar -->
+<div class="offline-bar" id="offlineBar">📵 Mode Offline — Data tersimpan lokal, akan sync saat online</div>
+
+<!-- ── HEADER ── -->
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">DAILY<span>OVERCOMER</span></h2>
+    <h2 class="header-title">STRONG <span>DAILY FLOW</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
-    <div class="lang-toggle">
-      <button class="lang-btn" id="btnID" onclick="setLang('id')">ID</button>
-      <button class="lang-btn" id="btnEN" onclick="setLang('en')">EN</button>
-    </div>
     <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
-    <button class="logout-btn" id="logoutBtn" onclick="doLogout()">Keluar</button>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
   </div>
 </div>
 
-<!-- ═══ PAGE 1: JADWAL ═══ -->
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE 1 : JADWAL HARIAN -->
+<!-- ════════════════════════════════════════════ -->
 <div id="page-jadwal" class="page active">
   <div class="card">
-    <p class="card-title" data-i="addTitle">➕ Tambah Rutinitas Harian</p>
+    <p class="card-title">➕ Tambah Rutinitas Harian</p>
     <div class="input-group">
       <input type="time" id="newTime" required>
-      <input type="text" id="newTitle" data-ph-i="phTitle" placeholder="Nama Jadwal" required>
-      <input type="text" id="newDesc"  data-ph-i="phDesc"  placeholder="Keterangan tambahan">
-      <button class="btn-primary" id="addBtn" onclick="addNewSchedule()" data-i="addBtn">+ MASUKKAN KE DAFTAR</button>
+      <input type="text" id="newTitle" placeholder="Nama Jadwal (mis: Makan Siang Dada Ayam)" required>
+      <input type="text" id="newDesc" placeholder="Keterangan tambahan (porsi / detail)">
+      <button class="btn-primary" id="addBtn" onclick="addNewSchedule()">+ MASUKKAN KE DAFTAR</button>
     </div>
   </div>
+
   <div class="progress-header">
-    <span id="progressLabel" data-i="loading">Memuat...</span>
+    <span id="progressLabel">Memuat jadwal...</span>
     <span id="progressPct">—</span>
   </div>
-  <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
-  <div id="scheduleList"><div class="loading-state"><div class="loading-spinner"></div></div></div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <div id="scheduleList">
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Menghubungkan ke cloud...</p>
+    </div>
+  </div>
 </div>
 
-<!-- ═══ PAGE 2: PROGRESS ═══ -->
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE 2 : PROGRESS TRACKER -->
+<!-- ════════════════════════════════════════════ -->
 <div id="page-progress" class="page">
-
-  <!-- Berat Badan -->
   <div class="card">
-    <p class="card-title" data-i="weightTitle">⚖️ Catatan Berat Badan</p>
+    <p class="card-title">⚖️ Catatan Berat Badan</p>
     <div class="input-group">
       <div class="input-row">
-        <input type="number" step="0.1" id="weightInput" data-ph-i="phCurrent" placeholder="Berat skrg (kg)">
-        <input type="number" step="0.1" id="goalInput"   data-ph-i="phTarget"  placeholder="Target (kg)">
+        <input type="number" step="0.1" id="weightInput" placeholder="Berat skrg (kg)">
+        <input type="number" step="0.1" id="goalInput" placeholder="Target (kg)">
       </div>
-      <input type="text" id="weightNote" data-ph-i="phWeightNote" placeholder="Catatan (opsional, mis: setelah gym)">
-      <button class="btn-primary" onclick="saveWeightCloud()" data-i="saveWeight">💾 SIMPAN & SINKRONKAN</button>
+      <button class="btn-primary" onclick="saveWeightCloud()">💾 SIMPAN & SINKRONKAN</button>
     </div>
     <div id="weightDisplay" class="weight-display" style="display:none;">
-      <div class="wd-label" data-i="wdLabel">BERAT BADAN TERKINI</div>
+      <div class="wd-label">BERAT BADAN TERKINI</div>
       <div class="wd-value" id="wdCurrent">— kg</div>
-      <div class="wd-target" id="wdTarget"></div>
-      <div id="wdDiff"></div>
-      <div class="wd-synced" data-i="wdSynced">✓ Tersinkronisasi di semua perangkat</div>
+      <div class="wd-target" id="wdTarget">Target: — kg</div>
+      <div class="wd-synced">✓ Tersinkronisasi di semua perangkat</div>
     </div>
-    <div id="weightLoading" class="loading-state" style="padding:14px;"><div class="loading-spinner"></div></div>
-
-    <!-- Weight Log -->
-    <div class="log-section-title">
-      <span data-i="weightLog">📋 Riwayat Berat Badan</span>
-      <button class="log-clear-btn" onclick="clearWeightLog()" data-i="clearLog">Hapus Semua</button>
-    </div>
-    <div class="weight-log-list" id="weightLogList">
-      <div class="empty-state"><p data-i="noWeightLog">Belum ada riwayat.</p></div>
+    <div id="weightLoading" class="loading-state" style="padding:16px;">
+      <div class="loading-spinner"></div>
+      <p>Memuat data...</p>
     </div>
   </div>
 
-  <!-- Foto Progres -->
   <div class="card">
-    <p class="card-title" data-i="photoTitle">📸 Galeri Foto Progres</p>
-    <p style="font-size:11px;color:var(--text-dim);margin:0 0 10px;" data-i="photoSub">Setiap foto tersimpan & tersinkronisasi — tap untuk perbesar.</p>
-    <input type="text" id="photoNoteInput" data-ph-i="phPhotoNote" placeholder="Keterangan foto (opsional)" style="margin-bottom:8px;">
-    <label class="photo-upload-label" for="photoInput">📁 <span data-i="uploadPhoto">Unggah Foto Baru</span></label>
-    <input type="file" id="photoInput" accept="image/*" onchange="uploadPhoto(event)">
-    <div id="photoUploadStatus" style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:6px;min-height:16px;"></div>
-
-    <div class="photo-gallery" id="photoGallery">
-      <div class="photo-empty" style="grid-column:span 2;" data-i="noPhotos">Belum ada foto progres. Unggah foto pertama kamu!</div>
+    <p class="card-title">📸 Foto Progres Fisik</p>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 10px;">Update dari HP atau Laptop — otomatis tersinkronisasi.</p>
+    <label class="photo-upload-label" for="photoInput">📁 Pilih / Ganti Foto Progres</label>
+    <input type="file" id="photoInput" accept="image/*" onchange="uploadPhotoCloud(event)">
+    <div class="photo-container" id="photoContainer">
+      <div class="photo-placeholder" id="photoPlaceholder">
+        <div class="pi">📷</div>
+        <p>Belum ada foto progres</p>
+        <p style="margin-top:3px;">Unggah dari HP atau Laptop</p>
+      </div>
+      <img id="photoDisplay" alt="Foto Progres">
     </div>
+    <div id="photoUploadStatus" style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:6px;"></div>
   </div>
 </div>
 
-<!-- ═══ PAGE 3: PROGRAM ═══ -->
+<!-- ════════════════════════════════════════════ -->
+<!-- PAGE 3 : PROGRAM LATIHAN -->
+<!-- ════════════════════════════════════════════ -->
 <div id="page-latihan" class="page">
   <div class="card">
-    <p class="card-title" data-i="programTitle">🏋️ Program Latihan Mingguan</p>
-    <p style="font-size:11px;color:var(--text-dim);margin:-6px 0 13px;" data-i="programSub">Ketuk hari untuk melihat detail gerakan & panduan set.</p>
+    <p class="card-title">🏋️ Program Latihan Mingguan</p>
+    <p style="font-size:11px;color:var(--text-dim);margin:-6px 0 14px;">Ketuk hari untuk melihat detail gerakan & panduan set.</p>
 
     <button class="day-btn" id="btn-senin" onclick="toggleDay('senin')">
-      <span data-i="day1">📅 Senin — Upper Body 1 (Pull)</span><i class="chevron">▼</i>
+      <span>📅 Senin — Upper Body 1 (Pull)</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-senin">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b data-i="ex1a">Pull-up / Chin-up</b><span><span class="sets-badge">3×8</span><span data-i="ex1a_d">Fokus latissimus dorsi / otot sayap</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b data-i="ex1b">Push-up Tradisional</b><span><span class="sets-badge">3×15</span><span data-i="ex1b_d">Fokus dada & tricep</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b data-i="ex1c">Dumbbell Row (1 Tangan)</b><span><span class="sets-badge">3×12</span><span data-i="ex1c_d">Penebalan otot punggung tengah</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b data-i="ex1d">DB Shoulder Press</b><span><span class="sets-badge">3×12</span><span data-i="ex1d_d">Membentuk bahu bulat & lebar</span></span></div></div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Pull-up / Chin-up</b><span><span class="sets-badge">3×8</span>Fokus latissimus dorsi / otot sayap</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Push-up Tradisional</b><span><span class="sets-badge">3×15</span>Fokus dada & tricep</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Dumbbell Row (1 Tangan)</b><span><span class="sets-badge">3×12</span>Penebalan otot punggung tengah</span></div></div>
+      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>DB Shoulder Press</b><span><span class="sets-badge">3×12</span>Membentuk bahu bulat & lebar</span></div></div>
     </div>
 
     <button class="day-btn" id="btn-selasa" onclick="toggleDay('selasa')">
-      <span data-i="day2">📅 Selasa — Lower Body & Core</span><i class="chevron">▼</i>
+      <span>📅 Selasa — Lower Body & Core</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-selasa">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b data-i="ex2a">Bodyweight Squat</b><span><span class="sets-badge">3×20</span><span data-i="ex2a_d">Fokus paha depan & glutes</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b data-i="ex2b">Bulgarian Split Squat</b><span><span class="sets-badge">3×10/kaki</span><span data-i="ex2b_d">Kekuatan & keseimbangan unilateral</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b data-i="ex2c">Sit-up Terkontrol</b><span><span class="sets-badge">3×20</span><span data-i="ex2c_d">Pembentukan otot perut tengah</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b data-i="ex2d">Plank Statis</b><span><span class="sets-badge">3×45 dtk</span><span data-i="ex2d_d">Penguatan core, penting untuk lambung</span></span></div></div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Bodyweight Squat</b><span><span class="sets-badge">3×20</span>Fokus paha depan & glutes</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Bulgarian Split Squat</b><span><span class="sets-badge">3×10/kaki</span>Kekuatan & keseimbangan unilateral</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Sit-up Terkontrol</b><span><span class="sets-badge">3×20</span>Pembentukan otot perut tengah</span></div></div>
+      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>Plank Statis</b><span><span class="sets-badge">3×45 detik</span>Penguatan core, penting untuk lambung</span></div></div>
     </div>
 
     <button class="day-btn" id="btn-rabu" onclick="toggleDay('rabu')">
-      <span data-i="day3">😴 Rabu — Rest Day (Pemulihan)</span><i class="chevron">▼</i>
+      <span>😴 Rabu — Rest Day (Pemulihan)</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-rabu">
-      <div class="rest-day"><div class="ri">😴</div><p><b data-i="restTitle">Istirahat Penuh</b><br><span data-i="restDesc">Tidak ada angkat beban. Fokus pemulihan energi, istirahat sendi, dan jaga pola makan.</span></p></div>
+      <div class="rest-day"><div class="ri">😴</div><p><b>Istirahat Penuh</b><br>Tidak ada angkat beban. Fokus pemulihan energi, istirahat sendi, dan jaga pola makan agar asam lambung stabil.</p></div>
     </div>
 
     <button class="day-btn" id="btn-kamis" onclick="toggleDay('kamis')">
-      <span data-i="day4">📅 Kamis — Upper Body 2 (Push)</span><i class="chevron">▼</i>
+      <span>📅 Kamis — Upper Body 2 (Push)</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-kamis">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b data-i="ex4a">Chin-up (Underhand Grip)</b><span><span class="sets-badge">3×8</span><span data-i="ex4a_d">Fokus bicep & punggung bawah</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b data-i="ex4b">Incline Push-up</b><span><span class="sets-badge">3×12</span><span data-i="ex4b_d">Target dada bagian atas agar bidang</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b data-i="ex4c">Dumbbell Bicep Curl</b><span><span class="sets-badge">3×15</span><span data-i="ex4c_d">Isolasi pembesaran lengan depan</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b data-i="ex4d">Chair Dips</b><span><span class="sets-badge">3×15</span><span data-i="ex4d_d">Memahat otot tricep lengan belakang</span></span></div></div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Chin-up (Underhand Grip)</b><span><span class="sets-badge">3×8</span>Fokus bicep & punggung bawah</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Incline Push-up</b><span><span class="sets-badge">3×12</span>Target dada bagian atas agar bidang</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Dumbbell Bicep Curl</b><span><span class="sets-badge">3×15</span>Isolasi pembesaran lengan depan</span></div></div>
+      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>Chair Dips</b><span><span class="sets-badge">3×15</span>Memahat otot tricep lengan belakang</span></div></div>
     </div>
 
     <button class="day-btn" id="btn-jumat" onclick="toggleDay('jumat')">
-      <span data-i="day5">📅 Jumat — Lower Body Power</span><i class="chevron">▼</i>
+      <span>📅 Jumat — Lower Body Power</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-jumat">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b data-i="ex5a">Goblet Squat (Dumbbell)</b><span><span class="sets-badge">3×15</span><span data-i="ex5a_d">Squat penuh dengan beban, fokus quad & core</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b data-i="ex5b">Walking Lunges</b><span><span class="sets-badge">3×12 langkah</span><span data-i="ex5b_d">Kekuatan paha & ketahanan fisik</span></span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b data-i="ex5c">Lying Leg Raises</b><span><span class="sets-badge">3×15</span><span data-i="ex5c_d">Target otot perut bagian bawah</span></span></div></div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Goblet Squat (Dumbbell)</b><span><span class="sets-badge">3×15</span>Squat penuh dengan beban, fokus quad & core</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Walking Lunges</b><span><span class="sets-badge">3×12 langkah</span>Kekuatan paha & ketahanan fisik</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Lying Leg Raises</b><span><span class="sets-badge">3×15</span>Target otot perut bagian bawah</span></div></div>
     </div>
 
     <button class="day-btn" id="btn-weekend" onclick="toggleDay('weekend')">
-      <span data-i="day6">🔄 Sabtu & Minggu — Evaluasi & Pemulihan</span><i class="chevron">▼</i>
+      <span>🔄 Sabtu & Minggu — Evaluasi & Pemulihan</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-weekend">
-      <div class="rest-day"><div class="ri">⚖️</div><p><b data-i="evalTitle">Evaluasi Akhir Minggu</b><br><span data-i="evalDesc">Istirahat dari beban berat. Catat berat badan di tab Progress untuk evaluasi surplus kalori mingguan.</span></p></div>
+      <div class="rest-day"><div class="ri">⚖️</div><p><b>Evaluasi Akhir Minggu</b><br>Istirahat dari beban berat. Catat berat badan pagi hari di tab Progress untuk evaluasi surplus kalori mingguan.</p></div>
     </div>
   </div>
 </div>
@@ -338,13 +454,13 @@
 <!-- Bottom Nav -->
 <div class="bottom-nav">
   <button class="nav-item active" id="nav-jadwal" onclick="switchTab('jadwal',this)">
-    <span class="ni">📅</span><span data-i="nav1">Jadwal</span>
+    <span class="ni">📅</span>Jadwal
   </button>
   <button class="nav-item" id="nav-progress" onclick="switchTab('progress',this)">
-    <span class="ni">📈</span><span data-i="nav2">Progress</span>
+    <span class="ni">📈</span>Progress
   </button>
   <button class="nav-item" id="nav-latihan" onclick="switchTab('latihan',this)">
-    <span class="ni">🏋️</span><span data-i="nav3">Program</span>
+    <span class="ni">🏋️</span>Program
   </button>
 </div>
 
