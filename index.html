@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#ff6b00"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 
@@ -19,19 +19,19 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
 
-    :root {
-      --bg-main: #0a0a0f;
-      --bg-card: #13131c;
-      --bg-input: #1a1a27;
-      --accent: #ff6b00;
-      --accent-dim: rgba(255,107,0,0.15);
-      --accent-glow: 0 0 20px rgba(255,107,0,0.4);
-      --text: #f0f0f5;
-      --text-dim: #6b7280;
-      --border: #1f1f2e;
-      --green: #22c55e;
-      --red: #ef4444;
-    }
+   :root {
+  --bg-main: #f4f6f9;           
+  --bg-card: #ffffff;         
+  --bg-input: #f8fafc;         
+  --accent: #ff6b00;            
+  --accent-dim: rgba(255,107,0,0.08);
+  --accent-glow: 0 4px 14px rgba(255,107,0,0.3);
+  --text: #0f172a;         
+  --text-dim: #64748b;          
+  --border: #e2e8f0;         
+  --green: #16a34a;            
+  --red: #dc2626;             
+}
 
     * { box-sizing: border-box; }
 
@@ -77,6 +77,8 @@
       align-items: center;
       position: sticky; top: 0; z-index: 200;
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02); 
+}
     }
     .header-left { display: flex; align-items: center; gap: 10px; }
     .header-title {
@@ -85,20 +87,23 @@
     }
     .header-title span { color: var(--accent); }
     .user-badge {
-      font-size: 11px; color: var(--text-dim);
-      background: var(--bg-input);
-      padding: 3px 10px; border-radius: 20px;
-      border: 1px solid var(--border);
-    }
+  font-size: 11px; 
+  color: var(--accent); 
+  font-weight: 600;    
+  background: var(--accent-dim); 
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid rgba(255,107,0,0.15); 
+}
     .header-right { display: flex; align-items: center; gap: 8px; }
 
     /* Offline banner */
-    .offline-bar {
-      background: #292935; border-bottom: 1px solid var(--border);
-      text-align: center; padding: 6px;
-      font-size: 11px; color: var(--text-dim);
-      display: none;
-    }
+   .offline-bar {
+  background: #fff7ed; border-bottom: 1px solid var(--border); 
+  text-align: center; padding: 7px;
+  font-size: 11px; color: #c2410c; 
+  font-weight: 600; 
+  display: none;
+}
     .offline-bar.show { display: block; }
 
     /* Bell */
@@ -135,7 +140,21 @@
     @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 
     /* ── CARDS ── */
-    .card { background: var(--bg-card); border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
+    .card { 
+  background: var(--bg-card); 
+  border-radius: 16px; 
+  padding: 20px; 
+  margin-bottom: 16px; 
+  border: 1px solid var(--border); 
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.03); /* Ditambahkan shadow */
+}
+
+/* Modifikasi pada task card yang sudah selesai */
+.task-card.completed { 
+  opacity: 0.45; 
+  background: #f1f5f9;      /* Diubah jadi abu-abu mati */
+  border-left-color: #cbd5e1; 
+}
     .card-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:0.5px; margin:0 0 12px; }
 
     /* ── INPUTS ── */
@@ -274,20 +293,21 @@
     .rest-day .ri { font-size:34px; margin-bottom:6px; }
 
     /* ── BOTTOM NAV ── */
-    .bottom-nav {
-      position:fixed; bottom:0; left:0; right:0;
-      background:var(--bg-card); display:flex; justify-content:space-around;
-      padding:10px 0 13px; border-top:1px solid var(--border); z-index:200;
-    }
-    .nav-item {
-      background:none; border:none; color:var(--text-dim);
-      font-family:'Barlow',sans-serif; font-size:10px; font-weight:500;
-      display:flex; flex-direction:column; align-items:center; gap:3px;
-      cursor:pointer; padding:3px 18px; border-radius:8px; transition:all 0.2s;
-    }
-    .nav-item .ni { font-size:19px; line-height:1; }
-    .nav-item.active { color:var(--accent); }
-    .nav-item.active .ni { filter:drop-shadow(0 0 4px rgba(255,107,0,0.6)); }
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0;
+  background: var(--bg-card); display:flex; justify-content:space-around;
+  padding:12px 0 14px; border-top:1px solid var(--border); z-index:200;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.04); /* Menggantikan border kaku dengan shadow halus */
+}
+.nav-item {
+  background:none; border:none; color:var(--text-dim);
+  font-family:'Barlow',sans-serif; font-size:11px; font-weight:600; /* Font naik ke 11px & lebih tebal */
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; padding:4px 20px; border-radius:8px; transition:all 0.2s;
+}
+.nav-item .ni { font-size:20px; line-height:1; opacity: 0.7; } /* Ukuran emoji naik & sedikit redup jika tidak aktif */
+.nav-item.active { color:var(--accent); }
+.nav-item.active .ni { opacity: 1; filter:drop-shadow(0 2px 4px rgba(255,107,0,0.2)); } /* Efek glow neon diganti shadow tipis */
   </style>
 </head>
 <body class="hidden">
