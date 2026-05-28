@@ -4,10 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>STRONG DAILY FLOW</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#ff6b00"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Firebase SDK v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
@@ -28,489 +35,291 @@
 
     * { box-sizing: border-box; }
 
+    /* Auth loading screen */
+    #authGate {
+      position: fixed; inset: 0;
+      background: var(--bg-main);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    #authGate .ag-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 28px; font-weight: 800;
+      letter-spacing: 3px; color: var(--text); margin-top: 16px;
+    }
+    #authGate .ag-title span { color: var(--accent); }
+    #authGate .ag-spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     body {
       font-family: 'Barlow', sans-serif;
       background-color: var(--bg-main);
       color: var(--text);
-      margin: 0;
-      padding: 0;
+      margin: 0; padding: 0;
       padding-bottom: 90px;
       min-height: 100vh;
     }
+    body.hidden { overflow: hidden; }
 
     /* ── HEADER ── */
     .header {
       background: var(--bg-card);
-      padding: 14px 20px;
+      padding: 12px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 200;
+      position: sticky; top: 0; z-index: 200;
       border-bottom: 1px solid var(--border);
     }
+    .header-left { display: flex; align-items: center; gap: 10px; }
     .header-title {
       font-family: 'Barlow Condensed', sans-serif;
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: 2px;
-      margin: 0;
-      color: var(--text);
+      font-size: 20px; font-weight: 800; letter-spacing: 2px; margin: 0;
     }
     .header-title span { color: var(--accent); }
+    .user-badge {
+      font-size: 11px; color: var(--text-dim);
+      background: var(--bg-input);
+      padding: 3px 10px; border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+    .header-right { display: flex; align-items: center; gap: 8px; }
 
-    /* ── BELL BUTTON ── */
+    /* Offline banner */
+    .offline-bar {
+      background: #292935; border-bottom: 1px solid var(--border);
+      text-align: center; padding: 6px;
+      font-size: 11px; color: var(--text-dim);
+      display: none;
+    }
+    .offline-bar.show { display: block; }
+
+    /* Bell */
     .bell-btn {
-      background: none;
-      border: 2px solid var(--border);
-      border-radius: 50%;
-      width: 42px;
-      height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
+      background: none; border: 2px solid var(--border);
+      border-radius: 50%; width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; transition: all 0.3s; position: relative;
     }
-    .bell-btn.bell-off {
-      border-color: var(--border);
-      filter: grayscale(1);
-      opacity: 0.5;
-    }
-    .bell-btn.bell-on {
-      border-color: var(--accent);
-      box-shadow: var(--accent-glow);
-      animation: bell-pulse 2s infinite;
-    }
+    .bell-btn.bell-off { border-color: var(--border); filter: grayscale(1); opacity: 0.5; }
+    .bell-btn.bell-on { border-color: var(--accent); box-shadow: var(--accent-glow); animation: bell-pulse 2s infinite; }
     .bell-btn.bell-on::after {
-      content: '';
-      position: absolute;
-      top: -2px; right: -2px;
-      width: 10px; height: 10px;
-      background: var(--green);
-      border-radius: 50%;
-      border: 2px solid var(--bg-main);
+      content: ''; position: absolute; top: -2px; right: -2px;
+      width: 9px; height: 9px; background: var(--green);
+      border-radius: 50%; border: 2px solid var(--bg-main);
     }
     @keyframes bell-pulse {
-      0%, 100% { box-shadow: 0 0 8px rgba(255,107,0,0.4); }
+      0%,100% { box-shadow: 0 0 8px rgba(255,107,0,0.4); }
       50% { box-shadow: 0 0 22px rgba(255,107,0,0.8); }
     }
 
-    /* ── PAGES ── */
-    .page { display: none; padding: 16px; }
-    .page.active { display: block; animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
+    /* Logout btn */
+    .logout-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 5px 10px;
+      color: var(--text-dim); font-size: 11px;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
     }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    /* ── PAGES ── */
+    .page { display: none; padding: 14px; }
+    .page.active { display: block; animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 
     /* ── CARDS ── */
-    .card {
-      background: var(--bg-card);
-      border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-    }
-    .card-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 17px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      margin: 0 0 14px 0;
-      color: var(--text);
-    }
+    .card { background: var(--bg-card); border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid var(--border); }
+    .card-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:0.5px; margin:0 0 12px; }
 
-    /* ── FORM INPUTS ── */
-    .input-group { display: flex; flex-direction: column; gap: 10px; }
-    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-    input[type="time"],
-    input[type="text"],
-    input[type="number"] {
-      width: 100%;
-      padding: 11px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'Barlow', sans-serif;
-      font-size: 14px;
-      transition: border-color 0.2s;
+    /* ── INPUTS ── */
+    .input-group { display:flex; flex-direction:column; gap:9px; }
+    .input-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+    input[type="time"], input[type="text"], input[type="number"] {
+      width:100%; padding:11px 13px;
+      background:var(--bg-input); border:1px solid var(--border);
+      border-radius:10px; color:var(--text);
+      font-family:'Barlow',sans-serif; font-size:14px; transition:border-color 0.2s;
     }
-    input:focus {
-      outline: none;
-      border-color: var(--accent);
-      background: rgba(255,107,0,0.04);
-    }
+    input:focus { outline:none; border-color:var(--accent); background:rgba(255,107,0,0.04); }
     input[type="file"] {
-      width: 100%;
-      padding: 11px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-dim);
-      font-size: 13px;
-      cursor: pointer;
+      width:100%; padding:10px 13px;
+      background:var(--bg-input); border:1px solid var(--border);
+      border-radius:10px; color:var(--text-dim); font-size:13px; cursor:pointer;
     }
 
     /* ── BUTTONS ── */
     .btn-primary {
-      width: 100%;
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 13px;
-      border-radius: 10px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 4px;
+      width:100%; background:var(--accent); color:white; border:none;
+      padding:12px; border-radius:10px;
+      font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px;
+      cursor:pointer; transition:all 0.2s; margin-top:3px;
     }
-    .btn-primary:hover { background: #e05a00; transform: translateY(-1px); }
-    .btn-primary:active { transform: translateY(0); }
-    .btn-primary:disabled { background: #3a3a4a; cursor: not-allowed; transform: none; }
+    .btn-primary:hover { background:#e05a00; transform:translateY(-1px); }
+    .btn-primary:disabled { background:#2d2d3f; color:var(--text-dim); cursor:not-allowed; transform:none; }
 
-    /* ── STATUS BANNER ── */
+    /* Toast */
     #toast {
-      position: fixed;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: var(--green);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      opacity: 0;
-      transition: all 0.3s;
-      z-index: 300;
-      white-space: nowrap;
+      position:fixed; top:68px; left:50%; transform:translateX(-50%) translateY(-16px);
+      background:var(--green); color:white; padding:9px 18px;
+      border-radius:20px; font-size:13px; font-weight:600;
+      opacity:0; transition:all 0.3s; z-index:300; white-space:nowrap; pointer-events:none;
     }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    #toast.error { background: var(--red); }
+    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+    #toast.error { background:var(--red); }
 
-    /* ── LOADING STATE ── */
-    .loading-state {
-      text-align: center;
-      padding: 30px;
-      color: var(--text-dim);
-      font-size: 14px;
-    }
+    /* Loading state */
+    .loading-state { text-align:center; padding:28px; color:var(--text-dim); font-size:13px; }
     .loading-spinner {
-      width: 28px; height: 28px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin: 0 auto 10px;
+      width:26px; height:26px; border:2px solid var(--border);
+      border-top-color:var(--accent); border-radius:50%;
+      animation:spin 0.8s linear infinite; margin:0 auto 10px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── TASK CARDS (Page 1) ── */
-    #scheduleList { min-height: 60px; }
-
+    /* ── TASK CARDS ── */
     .task-card {
-      background: var(--bg-input);
-      padding: 14px 16px;
-      border-radius: 12px;
-      margin-bottom: 10px;
-      border-left: 4px solid var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.25s;
+      background:var(--bg-input); padding:12px 14px; border-radius:11px;
+      margin-bottom:9px; border-left:4px solid var(--accent);
+      display:flex; align-items:center; gap:10px; transition:all 0.25s;
     }
-    .task-card.completed {
-      opacity: 0.35;
-      border-left-color: #2d2d3f;
-    }
-    .task-card input[type="checkbox"] {
-      width: 22px;
-      height: 22px;
-      min-width: 22px;
-      accent-color: var(--accent);
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    .task-info {
-      flex: 1;
-      cursor: pointer;
-      min-width: 0;
-    }
+    .task-card.completed { opacity:0.33; border-left-color:#2d2d3f; }
+    .task-card input[type="checkbox"] { width:20px; height:20px; min-width:20px; accent-color:var(--accent); cursor:pointer; }
+    .task-info { flex:1; cursor:pointer; min-width:0; }
     .task-info h4 {
-      margin: 0 0 3px 0;
-      font-size: 15px;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-weight: 600;
-      letter-spacing: 0.3px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      margin:0 0 2px; font-size:14px;
+      font-family:'Barlow Condensed',sans-serif; font-weight:600;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
-    .task-card.completed .task-info h4 {
-      text-decoration: line-through;
-      color: var(--text-dim);
-    }
-    .task-info p {
-      margin: 0;
-      font-size: 12px;
-      color: var(--text-dim);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .task-time-badge {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--accent);
-      white-space: nowrap;
-    }
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-size: 16px;
-      cursor: pointer;
-      padding: 4px;
-      border-radius: 6px;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .delete-btn:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+    .task-card.completed .task-info h4 { text-decoration:line-through; color:var(--text-dim); }
+    .task-info p { margin:0; font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .task-time-badge { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:var(--accent); white-space:nowrap; }
+    .delete-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:3px; border-radius:6px; transition:all 0.2s; flex-shrink:0; }
+    .delete-btn:hover { color:var(--red); background:rgba(239,68,68,0.1); }
 
-    /* Empty state */
-    .empty-state {
-      text-align: center;
-      padding: 30px 20px;
-      color: var(--text-dim);
-    }
-    .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
-    .empty-state p { font-size: 13px; margin: 0; }
+    .empty-state { text-align:center; padding:28px 16px; color:var(--text-dim); }
+    .empty-state .ei { font-size:34px; margin-bottom:8px; }
+    .empty-state p { font-size:12px; margin:0; }
 
-    /* Progress bar */
-    .progress-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 12px;
-      color: var(--text-dim);
-    }
-    .progress-bar-track {
-      height: 5px;
-      background: var(--border);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 3px;
-      transition: width 0.5s ease;
-    }
+    .progress-header { display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-bottom:6px; }
+    .progress-bar-track { height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:14px; }
+    .progress-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.5s; }
 
-    /* ── PAGE 2: PROGRESS ── */
+    /* ── PAGE 2 ── */
     .weight-display {
-      background: var(--accent-dim);
-      border: 1px solid rgba(255,107,0,0.3);
-      border-radius: 12px;
-      padding: 14px;
-      text-align: center;
-      margin-top: 4px;
+      background:var(--accent-dim); border:1px solid rgba(255,107,0,0.3);
+      border-radius:11px; padding:14px; text-align:center; margin-top:8px;
     }
-    .weight-display .wd-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
-    .weight-display .wd-value {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--accent);
-    }
-    .weight-display .wd-target { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
-    .weight-display .wd-synced { font-size: 11px; color: var(--green); margin-top: 6px; }
+    .wd-label { font-size:11px; color:var(--text-dim); margin-bottom:3px; letter-spacing:1px; }
+    .wd-value { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:800; color:var(--accent); }
+    .wd-target { font-size:12px; color:var(--text-dim); margin-top:2px; }
+    .wd-synced { font-size:10px; color:var(--green); margin-top:5px; }
 
-    /* Photo */
-    .photo-container {
-      width: 100%;
-      min-height: 220px;
-      background: var(--bg-input);
-      border-radius: 12px;
-      border: 2px dashed var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      margin-top: 12px;
-      position: relative;
-      transition: border-color 0.3s;
-    }
-    .photo-container:hover { border-color: var(--accent); }
-    .photo-placeholder {
-      text-align: center;
-      color: var(--text-dim);
-      pointer-events: none;
-    }
-    .photo-placeholder .pi { font-size: 40px; margin-bottom: 8px; }
-    .photo-placeholder p { font-size: 12px; margin: 0; }
-    #photoDisplay {
-      width: 100%;
-      max-height: 420px;
-      object-fit: cover;
-      display: none;
-      border-radius: 10px;
-    }
     .photo-upload-label {
-      display: block;
-      width: 100%;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-      color: var(--text-dim);
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
+      display:block; width:100%; background:var(--bg-input);
+      border:1px solid var(--border); border-radius:10px;
+      padding:11px; text-align:center; color:var(--text-dim);
+      font-size:13px; cursor:pointer; transition:all 0.2s;
     }
-    .photo-upload-label:hover {
-      border-color: var(--accent);
-      color: var(--accent);
+    .photo-upload-label:hover { border-color:var(--accent); color:var(--accent); }
+    #photoInput { display:none; }
+    .photo-container {
+      width:100%; min-height:200px; background:var(--bg-input);
+      border-radius:11px; border:2px dashed var(--border);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; margin-top:10px; transition:border-color 0.3s;
     }
-    #photoInput { display: none; }
+    .photo-placeholder { text-align:center; color:var(--text-dim); pointer-events:none; }
+    .photo-placeholder .pi { font-size:38px; margin-bottom:6px; }
+    .photo-placeholder p { font-size:11px; margin:0; }
+    #photoDisplay { width:100%; max-height:420px; object-fit:cover; display:none; border-radius:9px; }
 
-    /* ── PAGE 3: PROGRAM LATIHAN ── */
+    /* ── PAGE 3 ── */
     .day-btn {
-      width: 100%;
-      background: var(--bg-input);
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 14px 16px;
-      border-radius: 10px;
-      text-align: left;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      margin-bottom: 6px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: all 0.2s;
+      width:100%; background:var(--bg-input); color:var(--text);
+      border:1px solid var(--border); padding:13px 15px; border-radius:10px;
+      text-align:left; font-family:'Barlow Condensed',sans-serif;
+      font-size:15px; font-weight:600; letter-spacing:0.5px;
+      margin-bottom:5px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;
     }
-    .day-btn:hover { border-color: var(--accent); background: var(--accent-dim); }
-    .day-btn.open { border-color: var(--accent); color: var(--accent); }
-    .day-btn .chevron { transition: transform 0.3s; font-style: normal; font-size: 12px; }
-    .day-btn.open .chevron { transform: rotate(180deg); }
-
+    .day-btn:hover { border-color:var(--accent); background:var(--accent-dim); }
+    .day-btn.open { border-color:var(--accent); color:var(--accent); }
+    .day-btn .chevron { transition:transform 0.3s; font-style:normal; font-size:11px; }
+    .day-btn.open .chevron { transform:rotate(180deg); }
     .day-content {
-      display: none;
-      background: rgba(255,107,0,0.04);
-      border: 1px solid rgba(255,107,0,0.2);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 10px;
+      display:none; background:rgba(255,107,0,0.04);
+      border:1px solid rgba(255,107,0,0.2); border-radius:10px;
+      padding:12px; margin-bottom:8px;
     }
-    .day-content.open { display: block; animation: fadeIn 0.2s ease-out; }
-
+    .day-content.open { display:block; animation:fadeIn 0.2s ease-out; }
     .workout-item {
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 14px;
-      line-height: 1.5;
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 10px;
-      align-items: start;
+      padding:9px 0; border-bottom:1px solid var(--border); font-size:13px;
+      line-height:1.5; display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start;
     }
-    .workout-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .workout-num {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--accent);
-      line-height: 1.2;
-      min-width: 24px;
-    }
-    .workout-text b { color: var(--text); display: block; font-size: 15px; margin-bottom: 2px; }
-    .workout-text span { color: var(--text-dim); font-size: 12px; }
+    .workout-item:last-child { border-bottom:none; padding-bottom:0; }
+    .workout-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--accent); line-height:1.2; min-width:22px; }
+    .workout-text b { color:var(--text); display:block; font-size:14px; margin-bottom:1px; }
+    .workout-text span { color:var(--text-dim); font-size:11px; }
     .sets-badge {
-      display: inline-block;
-      background: var(--accent-dim);
-      border: 1px solid rgba(255,107,0,0.3);
-      color: var(--accent);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-      margin-right: 6px;
+      display:inline-block; background:var(--accent-dim);
+      border:1px solid rgba(255,107,0,0.3); color:var(--accent);
+      font-size:10px; font-weight:600; padding:1px 7px; border-radius:20px; margin-right:5px;
     }
-    .rest-day {
-      text-align: center;
-      padding: 16px 0;
-      color: var(--text-dim);
-      font-size: 14px;
-      line-height: 1.6;
-    }
-    .rest-day .rest-icon { font-size: 36px; margin-bottom: 8px; }
+    .rest-day { text-align:center; padding:14px 0; color:var(--text-dim); font-size:13px; line-height:1.6; }
+    .rest-day .ri { font-size:34px; margin-bottom:6px; }
 
     /* ── BOTTOM NAV ── */
     .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--bg-card);
-      display: flex;
-      justify-content: space-around;
-      padding: 10px 0 14px;
-      border-top: 1px solid var(--border);
-      z-index: 200;
+      position:fixed; bottom:0; left:0; right:0;
+      background:var(--bg-card); display:flex; justify-content:space-around;
+      padding:10px 0 13px; border-top:1px solid var(--border); z-index:200;
     }
     .nav-item {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      font-family: 'Barlow', sans-serif;
-      font-size: 11px;
-      font-weight: 500;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      cursor: pointer;
-      padding: 4px 20px;
-      border-radius: 8px;
-      transition: all 0.2s;
+      background:none; border:none; color:var(--text-dim);
+      font-family:'Barlow',sans-serif; font-size:10px; font-weight:500;
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+      cursor:pointer; padding:3px 18px; border-radius:8px; transition:all 0.2s;
     }
-    .nav-item .nav-icon { font-size: 20px; line-height: 1; }
-    .nav-item.active { color: var(--accent); }
-    .nav-item.active .nav-icon { filter: drop-shadow(0 0 4px rgba(255,107,0,0.6)); }
+    .nav-item .ni { font-size:19px; line-height:1; }
+    .nav-item.active { color:var(--accent); }
+    .nav-item.active .ni { filter:drop-shadow(0 0 4px rgba(255,107,0,0.6)); }
   </style>
 </head>
-<body>
+<body class="hidden">
 
-<!-- Toast Notification -->
+<!-- Auth Loading Gate -->
+<div id="authGate">
+  <div class="ag-spinner"></div>
+  <p class="ag-title">STRONG <span>DAILY FLOW</span></p>
+</div>
+
+<!-- Toast -->
 <div id="toast"></div>
+
+<!-- Offline bar -->
+<div class="offline-bar" id="offlineBar">📵 Mode Offline — Data tersimpan lokal, akan sync saat online</div>
 
 <!-- ── HEADER ── -->
 <div class="header">
-  <h2 class="header-title">STRONG <span>DAILY FLOW</span></h2>
-  <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
+  <div class="header-left">
+    <h2 class="header-title">STRONG <span>DAILY FLOW</span></h2>
+    <span class="user-badge" id="userBadge">—</span>
+  </div>
+  <div class="header-right">
+    <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- PAGE 1 : JADWAL HARIAN                      -->
+<!-- PAGE 1 : JADWAL HARIAN -->
 <!-- ════════════════════════════════════════════ -->
 <div id="page-jadwal" class="page active">
-
   <div class="card">
     <p class="card-title">➕ Tambah Rutinitas Harian</p>
     <div class="input-group">
@@ -521,7 +330,6 @@
     </div>
   </div>
 
-  <!-- Progress bar selesai vs total -->
   <div class="progress-header">
     <span id="progressLabel">Memuat jadwal...</span>
     <span id="progressPct">—</span>
@@ -539,10 +347,9 @@
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- PAGE 2 : PROGRESS TRACKER                   -->
+<!-- PAGE 2 : PROGRESS TRACKER -->
 <!-- ════════════════════════════════════════════ -->
 <div id="page-progress" class="page">
-
   <div class="card">
     <p class="card-title">⚖️ Catatan Berat Badan</p>
     <div class="input-group">
@@ -552,215 +359,108 @@
       </div>
       <button class="btn-primary" onclick="saveWeightCloud()">💾 SIMPAN & SINKRONKAN</button>
     </div>
-    <div id="weightDisplay" class="weight-display" style="margin-top:14px; display:none;">
+    <div id="weightDisplay" class="weight-display" style="display:none;">
       <div class="wd-label">BERAT BADAN TERKINI</div>
       <div class="wd-value" id="wdCurrent">— kg</div>
       <div class="wd-target" id="wdTarget">Target: — kg</div>
       <div class="wd-synced">✓ Tersinkronisasi di semua perangkat</div>
     </div>
-    <div id="weightLoading" class="loading-state" style="padding:20px;">
+    <div id="weightLoading" class="loading-state" style="padding:16px;">
       <div class="loading-spinner"></div>
-      <p>Memuat data berat badan...</p>
+      <p>Memuat data...</p>
     </div>
   </div>
 
   <div class="card">
     <p class="card-title">📸 Foto Progres Fisik</p>
-    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;">Update dari HP atau Laptop — otomatis tersinkronisasi.</p>
-
-    <label class="photo-upload-label" for="photoInput">
-      📁 Pilih / Ganti Foto Progres
-    </label>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 10px;">Update dari HP atau Laptop — otomatis tersinkronisasi.</p>
+    <label class="photo-upload-label" for="photoInput">📁 Pilih / Ganti Foto Progres</label>
     <input type="file" id="photoInput" accept="image/*" onchange="uploadPhotoCloud(event)">
-
     <div class="photo-container" id="photoContainer">
       <div class="photo-placeholder" id="photoPlaceholder">
         <div class="pi">📷</div>
         <p>Belum ada foto progres</p>
-        <p style="margin-top:4px;">Unggah dari HP atau Laptop</p>
+        <p style="margin-top:3px;">Unggah dari HP atau Laptop</p>
       </div>
       <img id="photoDisplay" alt="Foto Progres">
     </div>
-    <div id="photoUploadStatus" style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:8px;"></div>
+    <div id="photoUploadStatus" style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:6px;"></div>
   </div>
 </div>
 
 <!-- ════════════════════════════════════════════ -->
-<!-- PAGE 3 : PROGRAM LATIHAN                    -->
+<!-- PAGE 3 : PROGRAM LATIHAN -->
 <!-- ════════════════════════════════════════════ -->
 <div id="page-latihan" class="page">
   <div class="card">
     <p class="card-title">🏋️ Program Latihan Mingguan</p>
-    <p style="font-size:12px;color:var(--text-dim);margin:-8px 0 16px;">Ketuk hari untuk melihat detail gerakan & panduan set.</p>
+    <p style="font-size:11px;color:var(--text-dim);margin:-6px 0 14px;">Ketuk hari untuk melihat detail gerakan & panduan set.</p>
 
-    <!-- SENIN -->
     <button class="day-btn" id="btn-senin" onclick="toggleDay('senin')">
-      <span>📅 Senin — Upper Body 1 (Pull Fokus)</span><i class="chevron">▼</i>
+      <span>📅 Senin — Upper Body 1 (Pull)</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-senin">
-      <div class="workout-item">
-        <div class="workout-num">1</div>
-        <div class="workout-text">
-          <b>Pull-up / Chin-up</b>
-          <span><span class="sets-badge">3 Set × 8 Rep</span>Fokus otot latissimus dorsi / sayap punggung</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">2</div>
-        <div class="workout-text">
-          <b>Push-up Tradisional</b>
-          <span><span class="sets-badge">3 Set × 15 Rep</span>Fokus dada & tricep</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">3</div>
-        <div class="workout-text">
-          <b>Dumbbell Row (Satu Tangan)</b>
-          <span><span class="sets-badge">3 Set × 12 Rep</span>Penebalan otot punggung tengah (rhomboid)</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">4</div>
-        <div class="workout-text">
-          <b>DB Shoulder Press</b>
-          <span><span class="sets-badge">3 Set × 12 Rep</span>Membentuk bahu bulat & lebar</span>
-        </div>
-      </div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Pull-up / Chin-up</b><span><span class="sets-badge">3×8</span>Fokus latissimus dorsi / otot sayap</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Push-up Tradisional</b><span><span class="sets-badge">3×15</span>Fokus dada & tricep</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Dumbbell Row (1 Tangan)</b><span><span class="sets-badge">3×12</span>Penebalan otot punggung tengah</span></div></div>
+      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>DB Shoulder Press</b><span><span class="sets-badge">3×12</span>Membentuk bahu bulat & lebar</span></div></div>
     </div>
 
-    <!-- SELASA -->
     <button class="day-btn" id="btn-selasa" onclick="toggleDay('selasa')">
       <span>📅 Selasa — Lower Body & Core</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-selasa">
-      <div class="workout-item">
-        <div class="workout-num">1</div>
-        <div class="workout-text">
-          <b>Bodyweight Squat</b>
-          <span><span class="sets-badge">3 Set × 20 Rep</span>Fokus paha depan (quad) & glutes</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">2</div>
-        <div class="workout-text">
-          <b>Bulgarian Split Squat</b>
-          <span><span class="sets-badge">3 Set × 10 Rep/kaki</span>Kekuatan & keseimbangan unilateral</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">3</div>
-        <div class="workout-text">
-          <b>Sit-up Terkontrol</b>
-          <span><span class="sets-badge">3 Set × 20 Rep</span>Pembentukan otot perut tengah</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">4</div>
-        <div class="workout-text">
-          <b>Plank Statis</b>
-          <span><span class="sets-badge">3 Set × 45 Detik</span>Penguatan core, penting untuk menopang lambung</span>
-        </div>
-      </div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Bodyweight Squat</b><span><span class="sets-badge">3×20</span>Fokus paha depan & glutes</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Bulgarian Split Squat</b><span><span class="sets-badge">3×10/kaki</span>Kekuatan & keseimbangan unilateral</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Sit-up Terkontrol</b><span><span class="sets-badge">3×20</span>Pembentukan otot perut tengah</span></div></div>
+      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>Plank Statis</b><span><span class="sets-badge">3×45 detik</span>Penguatan core, penting untuk lambung</span></div></div>
     </div>
 
-    <!-- RABU -->
     <button class="day-btn" id="btn-rabu" onclick="toggleDay('rabu')">
       <span>😴 Rabu — Rest Day (Pemulihan)</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-rabu">
-      <div class="rest-day">
-        <div class="rest-icon">😴</div>
-        <p><b>Istirahat Penuh</b><br>Tidak ada angkat beban. Fokus pada pemulihan energi, istirahat sendi, dan menjaga pola makan agar asam lambung stabil.</p>
-      </div>
+      <div class="rest-day"><div class="ri">😴</div><p><b>Istirahat Penuh</b><br>Tidak ada angkat beban. Fokus pemulihan energi, istirahat sendi, dan jaga pola makan agar asam lambung stabil.</p></div>
     </div>
 
-    <!-- KAMIS -->
     <button class="day-btn" id="btn-kamis" onclick="toggleDay('kamis')">
-      <span>📅 Kamis — Upper Body 2 (Push Fokus)</span><i class="chevron">▼</i>
+      <span>📅 Kamis — Upper Body 2 (Push)</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-kamis">
-      <div class="workout-item">
-        <div class="workout-num">1</div>
-        <div class="workout-text">
-          <b>Chin-up (Underhand Grip)</b>
-          <span><span class="sets-badge">3 Set × 8 Rep</span>Fokus bicep & punggung bawah</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">2</div>
-        <div class="workout-text">
-          <b>Incline Push-up</b>
-          <span><span class="sets-badge">3 Set × 12 Rep</span>Target dada bagian atas agar terlihat bidang</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">3</div>
-        <div class="workout-text">
-          <b>Dumbbell Bicep Curl</b>
-          <span><span class="sets-badge">3 Set × 15 Rep</span>Isolasi pembesaran lengan depan</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">4</div>
-        <div class="workout-text">
-          <b>Chair Dips</b>
-          <span><span class="sets-badge">3 Set × 15 Rep</span>Memahat otot tricep lengan belakang</span>
-        </div>
-      </div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Chin-up (Underhand Grip)</b><span><span class="sets-badge">3×8</span>Fokus bicep & punggung bawah</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Incline Push-up</b><span><span class="sets-badge">3×12</span>Target dada bagian atas agar bidang</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Dumbbell Bicep Curl</b><span><span class="sets-badge">3×15</span>Isolasi pembesaran lengan depan</span></div></div>
+      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>Chair Dips</b><span><span class="sets-badge">3×15</span>Memahat otot tricep lengan belakang</span></div></div>
     </div>
 
-    <!-- JUMAT -->
     <button class="day-btn" id="btn-jumat" onclick="toggleDay('jumat')">
       <span>📅 Jumat — Lower Body Power</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-jumat">
-      <div class="workout-item">
-        <div class="workout-num">1</div>
-        <div class="workout-text">
-          <b>Goblet Squat (Dumbbell)</b>
-          <span><span class="sets-badge">3 Set × 15 Rep</span>Squat penuh dengan beban, fokus quad & core</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">2</div>
-        <div class="workout-text">
-          <b>Walking Lunges</b>
-          <span><span class="sets-badge">3 Set × 12 Langkah</span>Kekuatan paha & ketahanan fisik</span>
-        </div>
-      </div>
-      <div class="workout-item">
-        <div class="workout-num">3</div>
-        <div class="workout-text">
-          <b>Lying Leg Raises</b>
-          <span><span class="sets-badge">3 Set × 15 Rep</span>Target otot perut bagian bawah</span>
-        </div>
-      </div>
+      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Goblet Squat (Dumbbell)</b><span><span class="sets-badge">3×15</span>Squat penuh dengan beban, fokus quad & core</span></div></div>
+      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Walking Lunges</b><span><span class="sets-badge">3×12 langkah</span>Kekuatan paha & ketahanan fisik</span></div></div>
+      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Lying Leg Raises</b><span><span class="sets-badge">3×15</span>Target otot perut bagian bawah</span></div></div>
     </div>
 
-    <!-- SABTU & MINGGU -->
     <button class="day-btn" id="btn-weekend" onclick="toggleDay('weekend')">
       <span>🔄 Sabtu & Minggu — Evaluasi & Pemulihan</span><i class="chevron">▼</i>
     </button>
     <div class="day-content" id="day-weekend">
-      <div class="rest-day">
-        <div class="rest-icon">⚖️</div>
-        <p><b>Evaluasi Akhir Minggu</b><br>Istirahat dari latihan beban berat. Pagi hari setelah bangun tidur, catat berat badan di tab Progress untuk evaluasi perkembangan surplus kalori mingguan.</p>
-      </div>
+      <div class="rest-day"><div class="ri">⚖️</div><p><b>Evaluasi Akhir Minggu</b><br>Istirahat dari beban berat. Catat berat badan pagi hari di tab Progress untuk evaluasi surplus kalori mingguan.</p></div>
     </div>
-
   </div>
 </div>
 
-<!-- ── BOTTOM NAVIGATION ── -->
+<!-- Bottom Nav -->
 <div class="bottom-nav">
-  <button class="nav-item active" id="nav-jadwal" onclick="switchTab('jadwal', this)">
-    <span class="nav-icon">📅</span>Jadwal
+  <button class="nav-item active" id="nav-jadwal" onclick="switchTab('jadwal',this)">
+    <span class="ni">📅</span>Jadwal
   </button>
-  <button class="nav-item" id="nav-progress" onclick="switchTab('progress', this)">
-    <span class="nav-icon">📈</span>Progress
+  <button class="nav-item" id="nav-progress" onclick="switchTab('progress',this)">
+    <span class="ni">📈</span>Progress
   </button>
-  <button class="nav-item" id="nav-latihan" onclick="switchTab('latihan', this)">
-    <span class="nav-icon">🏋️</span>Program
+  <button class="nav-item" id="nav-latihan" onclick="switchTab('latihan',this)">
+    <span class="ni">🏋️</span>Program
   </button>
 </div>
 
