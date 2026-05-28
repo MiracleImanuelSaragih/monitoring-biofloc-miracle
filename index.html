@@ -2,151 +2,187 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>To-Do List - Noel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Noel Gains Tracker</title>
 
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
   <style>
+    :root {
+      --bg-main: #121212;
+      --bg-card: #1e1e1e;
+      --accent: #ff6b00;
+      --text: #ffffff;
+      --text-dim: #a0a0a0;
+    }
     body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      padding: 20px;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text);
       margin: 0;
+      padding: 0;
+      padding-bottom: 80px; /* Space for bottom nav */
     }
-    .container {
-      max-width: 800px;
-      margin: auto;
-    }
-    h2 {
-      margin-bottom: 10px;
-      text-align: center;
-      font-size: 28px;
-    }
-    .card {
-      background: white;
-      color: black;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    }
-    .input-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr auto;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .input-row-schedule {
-      display: grid;
-      grid-template-columns: 3fr 2fr auto;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    input, select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-    button {
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      transition: opacity 0.2s;
-    }
-    button:hover {
-      opacity: 0.9;
-    }
-    .btn-notif {
-      width: 100%;
-      margin-bottom: 15px;
-      padding: 12px;
-      background: linear-gradient(135deg, #11998e, #38ef7d);
-      font-size: 15px;
-    }
-    .task {
-      background: #f8f9fa;
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 10px;
+    
+    /* Top Header & Notif Bell */
+    .header {
+      background-color: var(--bg-card);
+      padding: 15px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-left: 5px solid #667eea;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #333;
     }
-    .task.completed {
-      opacity: 0.5;
-      text-decoration: line-through;
-      border-left-color: #6c757d;
-      background: #e9ecef;
-    }
-    .task input[type="checkbox"] {
-      transform: scale(1.3);
-      margin-right: 12px;
+    .header h2 { margin: 0; font-size: 20px; color: var(--accent); }
+    .bell-btn {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 24px;
       cursor: pointer;
     }
-    .task-content {
-      flex-grow: 1;
-      display: flex;
-      align-items: center;
+
+    /* Page Containers */
+    .page { display: none; padding: 20px; }
+    .page.active { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* Forms & Inputs */
+    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+    input {
+      width: 100%; padding: 12px; background: #2a2a2a;
+      border: 1px solid #444; border-radius: 8px; color: white;
+      box-sizing: border-box;
     }
-    .task-text b {
-      color: #2c3e50;
+    button.btn-primary {
+      background: var(--accent); color: white; border: none;
+      padding: 12px 20px; border-radius: 8px; font-weight: bold; width: 100%;
     }
-    .task-text small {
-      color: #7f8c8d;
-      display: block;
-      margin-top: 2px;
+
+    /* Checklist Items */
+    .task-card {
+      background: var(--bg-card); padding: 15px; border-radius: 10px;
+      margin-bottom: 12px; border-left: 4px solid var(--accent);
+      display: flex; align-items: center; justify-content: space-between;
     }
-    @media (max-width: 600px) {
-      .input-row, .input-row-schedule {
-        grid-template-columns: 1fr;
-      }
+    .task-card.completed { opacity: 0.5; border-left-color: #555; }
+    .task-card input[type="checkbox"] {
+      width: 24px; height: 24px; accent-color: var(--accent); margin-right: 15px;
     }
+    .task-info { flex-grow: 1; }
+    .task-info h4 { margin: 0 0 5px 0; }
+    .task-info p { margin: 0; font-size: 12px; color: var(--text-dim); }
+    
+    /* Progress Mode */
+    .progress-box { background: var(--bg-card); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+    .photo-preview { width: 100%; max-height: 300px; object-fit: cover; border-radius: 10px; margin-top: 10px; display: none; }
+    
+    /* Motivasi Mode */
+    .motivation-img { width: 100%; border-radius: 10px; margin-bottom: 15px; }
+
+    /* Bottom Navigation App Style */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--bg-card); display: flex; justify-content: space-around;
+      padding: 10px 0; border-top: 1px solid #333; z-index: 100;
+    }
+    .nav-item {
+      background: none; border: none; color: var(--text-dim);
+      font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .nav-item.active { color: var(--accent); }
+    .nav-item span { font-size: 20px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🚀 MY DAILY TRACKER</h2>
 
-    <div class="card">
-      <h3 style="margin-top:0; color:#2c3e50;">💪 Bulking & Workout Routine (<span id="currentDayName">-</span>)</h3>
-      <button class="btn-notif" onclick="requestNotificationPermission()">🔔 Aktifkan Pengingat Notifikasi HP/Laptop</button>
-      <div id="bulkingList"></div>
-    </div>
+  <!-- Header -->
+  <div class="header">
+    <h2>💪 NOEL GAINS</h2>
+    <button class="bell-btn" onclick="requestNotif()" id="bellIcon">🔔</button>
+  </div>
 
-    <div class="card">
-      <h3 style="margin-top:0; color:#2c3e50;">📌 To-Do List / School Task</h3>
-      <div class="input-row">
-        <input id="taskText" placeholder="Task..." />
-        <input type="datetime-local" id="taskTime" />
-        <select id="taskReminder">
-          <option value="0">No Reminder</option>
-          <option value="5">5 menit</option>
-          <option value="15" selected>15 menit</option>
-          <option value="30">30 menit</option>
-        </select>
-        <button onclick="addTask()">Add</button>
+  <!-- MODE 1: JADWAL & CHECKLIST -->
+  <div id="page-jadwal" class="page active">
+    <h3>📅 Jadwal Makan & Latihan</h3>
+    
+    <!-- Form Tambah Jadwal Baru -->
+    <div style="background: var(--bg-card); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+      <h4 style="margin-top:0; color:var(--accent);">+ Tambah Rutinitas Baru</h4>
+      <div class="input-group" style="flex-direction: column;">
+        <input type="time" id="newTime" required>
+        <input type="text" id="newTitle" placeholder="Nama Jadwal (ex: Minum Whey)" required>
+        <input type="text" id="newDesc" placeholder="Deskripsi/Detail (opsional)">
+        <button class="btn-primary" onclick="addNewSchedule()">Tambahkan ke List</button>
       </div>
-      <div id="taskList"></div>
     </div>
 
-    <div class="card">
-      <h3 style="margin-top:0; color:#2c3e50;">📅 Daily Schedule</h3>
-      <div class="input-row-schedule">
-        <input id="scheduleText" placeholder="Plan..." />
-        <input type="datetime-local" id="scheduleTime" />
-        <button onclick="addSchedule()">Add Schedule</button>
+    <div id="scheduleList"></div>
+  </div>
+
+  <!-- MODE 2: TRACKER BERAT BADAN & FOTO -->
+  <div id="page-progress" class="page">
+    <h3>📈 Progress Tracker</h3>
+    
+    <div class="progress-box">
+      <h4 style="margin-top:0;">Update Berat Badan</h4>
+      <div class="input-group">
+        <input type="number" id="weightInput" placeholder="Berat saat ini (kg)">
+        <input type="number" id="goalInput" placeholder="Target (kg)">
       </div>
-      <div id="scheduleList"></div>
+      <button class="btn-primary" onclick="saveWeight()">Simpan Data</button>
+      <p id="weightDisplay" style="margin-top: 15px; font-weight: bold; color: var(--accent);"></p>
     </div>
+
+    <div class="progress-box">
+      <h4 style="margin-top:0;">📸 Jurnal Foto Otot (Local)</h4>
+      <input type="file" id="photoInput" accept="image/*" style="margin-bottom: 10px;" onchange="previewAndSaveImage(event)">
+      <img id="photoDisplay" class="photo-preview">
+      <p style="font-size: 11px; color: var(--text-dim);">Foto hanya tersimpan di perangkat HP ini demi privasi.</p>
+    </div>
+  </div>
+
+  <!-- MODE 3: MOTIVASI & DETAIL WORKOUT -->
+  <div id="page-motivasi" class="page">
+    <h3>🔥 Motivasi & Detail Latihan</h3>
+    
+    <div style="margin-bottom: 20px;">
+      <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop" class="motivation-img" alt="Motivation 1">
+      <div class="task-card" style="border-left-color: #fff;">
+        <div class="task-info">
+          <h4>Panduan Progressive Overload</h4>
+          <p>Selalu catat beban yang kamu angkat. Jika minggu ini dumbbell 10kg terasa mudah, minggu depan naikkan ke 12.5kg atau tambah repetisinya.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+      <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1470&auto=format&fit=crop" class="motivation-img" alt="Motivation 2">
+      <div class="task-card" style="border-left-color: #fff;">
+        <div class="task-info">
+          <h4>Mind-Muscle Connection</h4>
+          <p>Jangan cuma asal angkat. Rasakan otot yang ditarik saat menurunkan beban (eksentrik). Gerakan lambat dan terkontrol lebih baik dari beban berat tapi ngawur.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('jadwal', this)">
+      <span>📅</span> Jadwal
+    </button>
+    <button class="nav-item" onclick="switchTab('progress', this)">
+      <span>📈</span> Progress
+    </button>
+    <button class="nav-item" onclick="switchTab('motivasi', this)">
+      <span>🦍</span> Motivasi
+    </button>
   </div>
 
   <script src="script.js"></script>
