@@ -18,14 +18,14 @@ const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"
 const hariIniIndex = new Date().getDay();
 document.getElementById("currentDayName").innerText = namaHari[hariIniIndex];
 
-// Jadwal Olahraga Dinamis sesuai baseline hari
+// Jadwal Olahraga Dinamis sesuai hari aktif
 const menuWorkout = {
   1: "🏋️ Upper Body 1 (Pull-up 3x8, Push-up 3x15, DB Row 3x12, DB Shoulder Press 3x12)",
   2: "🦵 Lower Body & Core (Bodyweight Squat 3x20, Bulgarian Split Squat 3x10, Sit-up 3x20, Plank 45 detik)",
   3: "😴 Rest Day (Fokus istirahat penuh dan pemulihan asam lambung)",
   4: "🏋️ Upper Body 2 (Chin-up 3x8, Incline Push-up 3x12, DB Curl 3x15, Chair Dips 3x15)",
   5: "🦵 Lower Body & Core (Goblet Squat 3x15, Walking Lunges 3x12, Leg Raises 3x15)",
-  6: "😴 Rest Day (Pemulihan total otot & santai bersama keluarga)",
+  6: "😴 Rest Day (Pemulihan total otot & santai di rumah)",
   0: "⚖️ Rest Day (Evaluasi timbangan badan di pagi hari setelah bangun tidur)"
 };
 
@@ -38,21 +38,17 @@ const templateBulking = [
   { id: "makan5", time: "19:00", title: "🍗 Makan Malam", desc: "1.5 Centong Nasi + Protein Rumah + Sayur (Makan 2 jam sebelum tidur!)" }
 ];
 
-// Dapatkan ID tanggal hari ini format YYYY-MM-DD
 function getTodayDateString() {
   const d = new Date();
   return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
 }
 
-// Sinkronisasi Checklist Bulking dengan Firebase secara Real-time
 const dateKey = getTodayDateString();
-db.collection("bulking_tracker").where("date", "==", dateKey).onSnapshot(snapshot => {
-  let completedIds = {};
-  snapshot.forEach(doc => {
-    completedIds[doc.data().taskId] = doc.data().completed;
-  });
 
+// 🔥 FUNGSI REVOLUSIONER: Menggambar list ke layar secara instan tanpa nunggu database
+function renderBulkingList(completedIds = {}) {
   const container = document.getElementById("bulkingList");
+  if (!container) return;
   container.innerHTML = "";
 
   templateBulking.forEach(item => {
@@ -70,15 +66,41 @@ db.collection("bulking_tracker").where("date", "==", dateKey).onSnapshot(snapsho
     `;
     container.appendChild(div);
   });
+}
+
+// Ambil backup data lokal HP terlebih dahulu agar layar tidak kosong saat loading
+let localBackup = JSON.parse(localStorage.getItem("fallback_bulking_" + dateKey) || "{}");
+renderBulkingList(localBackup);
+
+// Hubungkan ke Firebase (Dilengkapi pengaman jika database terkunci)
+db.collection("bulking_tracker").where("date", "==", dateKey).onSnapshot(snapshot => {
+  let completedIds = {};
+  snapshot.forEach(doc => {
+    completedIds[doc.data().taskId] = doc.data().completed;
+  });
+  localStorage.setItem("fallback_bulking_" + dateKey, JSON.stringify(completedIds));
+  localBackup = completedIds;
+  renderBulkingList(completedIds);
+}, error => {
+  console.log("Firebase Terkunci/Error. Menggunakan sistem penyimpanan lokal HP.", error);
+  renderBulkingList(localBackup);
 });
 
 function toggleBulkingCheck(taskId, currentStatus) {
+  // Update lokal HP secara instan agar responsif saat diklik
+  localBackup[taskId] = !currentStatus;
+  localStorage.setItem("fallback_bulking_" + dateKey, JSON.stringify(localBackup));
+  renderBulkingList(localBackup);
+
+  // Kirim data cadangan ke cloud Firebase jika akses terbuka
   const docId = `${dateKey}_${taskId}`;
   db.collection("bulking_tracker").doc(docId).set({
     date: dateKey,
     taskId: taskId,
     completed: !currentStatus
-  }, { merge: true });
+  }, { merge: true }).catch(err => {
+    console.log("Gagal sinkronisasi awan, data aman disimpan di internal HP.");
+  });
 }
 
 // ==========================================
@@ -86,34 +108,34 @@ function toggleBulkingCheck(taskId, currentStatus) {
 // ==========================================
 function requestNotificationPermission() {
   if (!("Notification" in window)) {
-    alert("Browser Anda tidak mendukung sistem notifikasi deskop.");
+    alert("Browser HP/Laptop kamu tidak mengizinkan atau tidak mendukung Web Notification standard.");
   } else if (Notification.permission === "granted") {
-    alert("Sistem pengingat terjadwal sudah aktif!");
+    alert("Sistem pengingat harian sudah aktif!");
   } else {
     Notification.requestPermission().then(permission => {
-      if (permission === "granted") alert("Izin diberikan! Pengingat otomatis diaktifkan.");
+      if (permission === "granted") {
+        alert("Akses diizinkan! Pengingat otomatis diaktifkan.");
+      } else {
+        alert("Izin ditolak. Kamu harus membuka pengaturan browser di HP secara manual untuk mengaktifkan notifikasinya.");
+      }
     });
   }
 }
 
-// Background Worker Pengecek Waktu (Setiap 30 Detik)
+// Pengecek Jam Masakan/Latihan (Setiap 30 Detik)
 setInterval(() => {
   const sekarang = new Date();
   const waktuSekarang = `${sekarang.getHours().toString().padStart(2,'0')}:${sekarang.getMinutes().toString().padStart(2,'0')}`;
 
-  if (Notification.permission === "granted") {
+  if (window.Notification && Notification.permission === "granted") {
     templateBulking.forEach(item => {
       if (item.time === waktuSekarang) {
-        const docId = `${getTodayDateString()}_${item.id}`;
-        db.collection("bulking_tracker").doc(docId).get().then(doc => {
-          // Jika data kosong atau belum dichecklist, kirim alert
-          if (!doc.exists || !doc.data().completed) {
-            new Notification(`Waktunya ${item.title}!`, {
-              body: item.desc,
-              icon: "https://cdn-icons-png.flaticon.com/512/3043/3043211.png"
-            });
-          }
-        });
+        if (!localBackup[item.id]) {
+          new Notification(`Waktunya ${item.title}!`, {
+            body: item.desc,
+            icon: "https://cdn-icons-png.flaticon.com/512/3043/3043211.png"
+          });
+        }
       }
     });
   }
@@ -122,8 +144,6 @@ setInterval(() => {
 // ==========================================
 // 🔹 LOGIKA CORE INTERFACE LAMA (TASKS & SCHEDULE)
 // ==========================================
-
-// 📌 Rangkaian Logic To-Do List
 function addTask() {
   const text = document.getElementById("taskText").value.trim();
   const time = document.getElementById("taskTime").value;
@@ -176,7 +196,6 @@ db.collection("tasks").orderBy("timestamp", "desc").onSnapshot(snapshot => {
   });
 });
 
-// 📅 Rangkaian Logic Daily Schedule
 function addSchedule() {
   const text = document.getElementById("scheduleText").value.trim();
   const time = document.getElementById("scheduleTime").value;
