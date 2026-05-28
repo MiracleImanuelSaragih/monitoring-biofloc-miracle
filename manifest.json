@@ -1,0 +1,23 @@
+{
+  "name": "Strong Daily Flow",
+  "short_name": "SDF",
+  "description": "Daily fitness scheduler & progress tracker",
+  "start_url": "/to-do-list-noel-/",
+  "scope": "/to-do-list-noel-/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#ff6b00",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3043/3043211.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3043/3043211.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
