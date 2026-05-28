@@ -27,6 +27,7 @@ db.enablePersistence({ synchronizeTabs: true })
   });
 
 // ── Service Worker (PWA) ─────────────────────────────────────
+/*
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
@@ -34,7 +35,7 @@ if ('serviceWorker' in navigator) {
       .catch(err => console.warn('SW failed:', err));
   });
 }
-
+*/
 // ── Offline detection ────────────────────────────────────────
 const offlineBar = document.getElementById('offlineBar');
 window.addEventListener('offline', () => offlineBar.classList.add('show'));
