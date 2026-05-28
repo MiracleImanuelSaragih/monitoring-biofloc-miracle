@@ -1,4 +1,4 @@
-// Firebase versi 8.x (non-modular)
+// Konfigurasi Firebase Anda
 const firebaseConfig = {
   apiKey: "AIzaSyAcnTpDBXO2WpXs3ri21SXJfzUMC_xkCkU",
   authDomain: "premium-todo-list.firebaseapp.com",
@@ -8,238 +8,238 @@ const firebaseConfig = {
   appId: "1:630693485104:web:820a99e6af935a7345abf5"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.firestore();
 
-// ==========================================
-// 🔹 DATA STRUKTUR PROGRAM BULKING & GERD PROTECT
-// ==========================================
-const namaHari = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-const hariIniIndex = new Date().getDay();
-document.getElementById("currentDayName").innerText = namaHari[hariIniIndex];
-
-// Jadwal Olahraga Dinamis sesuai hari aktif
-const menuWorkout = {
-  1: "🏋️ Upper Body 1 (Pull-up 3x8, Push-up 3x15, DB Row 3x12, DB Shoulder Press 3x12)",
-  2: "🦵 Lower Body & Core (Bodyweight Squat 3x20, Bulgarian Split Squat 3x10, Sit-up 3x20, Plank 45 detik)",
-  3: "😴 Rest Day (Fokus istirahat penuh dan pemulihan asam lambung)",
-  4: "🏋️ Upper Body 2 (Chin-up 3x8, Incline Push-up 3x12, DB Curl 3x15, Chair Dips 3x15)",
-  5: "🦵 Lower Body & Core (Goblet Squat 3x15, Walking Lunges 3x12, Leg Raises 3x15)",
-  6: "😴 Rest Day (Pemulihan total otot & santai di rumah)",
-  0: "⚖️ Rest Day (Evaluasi timbangan badan di pagi hari setelah bangun tidur)"
-};
-
-const templateBulking = [
-  { id: "makan1", time: "07:00", title: "🍳 Sarapan Ringan", desc: "1 Centong Nasi + 2 Butir Telur (Dadar/Ceplok/Rebus)" },
-  { id: "makan2", time: "10:00", title: "🥛 Snack Pagi", desc: "1 Gelas Susu Milo + 1 Buah Pisang / Roti Tawar" },
-  { id: "makan3", time: "13:00", title: "🍛 Makan Siang", desc: "1.5 Centong Nasi + 2 Potong Tempe/Tahu + Sayur Masakan Rumah" },
-  { id: "makan4", time: "16:00", title: "⚡ Pre-Workout Snack", desc: "1 Gelas Susu Milo (Sediaan energi latihan)" },
-  { id: "workout", time: "16:30", title: "💪 Sesi Latihan Otot", desc: menuWorkout[hariIniIndex] },
-  { id: "makan5", time: "19:00", title: "🍗 Makan Malam", desc: "1.5 Centong Nasi + Protein Rumah + Sayur (Makan 2 jam sebelum tidur!)" }
-];
-
+// Helpers Tanggal
 function getTodayDateString() {
   const d = new Date();
   return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
 }
-
 const dateKey = getTodayDateString();
 
-// 🔥 FUNGSI REVOLUSIONER: Menggambar list ke layar secara instan tanpa nunggu database
-function renderBulkingList(completedIds = {}) {
-  const container = document.getElementById("bulkingList");
-  if (!container) return;
-  container.innerHTML = "";
+// =====================================
+// 1. NAVIGATION LOGIC (Ganti Mode)
+// =====================================
+function switchTab(tabId, btnElement) {
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+  
+  document.getElementById(`page-${tabId}`).classList.add('active');
+  btnElement.classList.add('active');
+}
 
-  templateBulking.forEach(item => {
-    const isCompleted = completedIds[item.id] || false;
+// =====================================
+// 2. SCHEDULE & CHECKLIST LOGIC
+// =====================================
+let mySchedule = [];
+
+// Fungsi render ke layar
+function renderSchedule() {
+  const container = document.getElementById("scheduleList");
+  container.innerHTML = "";
+  
+  // Urutkan berdasarkan jam
+  mySchedule.sort((a, b) => a.time.localeCompare(b.time));
+
+  mySchedule.forEach(item => {
+    const isDone = item.completed || false;
     const div = document.createElement("div");
-    div.className = "task" + (isCompleted ? " completed" : "");
+    div.className = `task-card ${isDone ? 'completed' : ''}`;
+    
     div.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${isCompleted ? "checked" : ""} onchange="toggleBulkingCheck('${item.id}', ${isCompleted})">
-        <div class="task-text">
-          <b>${item.time} - ${item.title}</b>
-          <small>${item.desc}</small>
-        </div>
+      <input type="checkbox" ${isDone ? "checked" : ""} onchange="toggleCheck('${item.id}', ${isDone})">
+      <div class="task-info" onclick="toggleCheck('${item.id}', ${isDone})">
+        <h4>${item.time} - ${item.title}</h4>
+        <p>${item.desc}</p>
       </div>
+      <button onclick="deleteSchedule('${item.id}')" style="background:none; border:none; color:#ff4444; font-size:18px;">🗑️</button>
     `;
     container.appendChild(div);
   });
 }
 
-// Ambil backup data lokal HP terlebih dahulu agar layar tidak kosong saat loading
-let localBackup = JSON.parse(localStorage.getItem("fallback_bulking_" + dateKey) || "{}");
-renderBulkingList(localBackup);
+// Tambah jadwal custom baru
+function addNewSchedule() {
+  const time = document.getElementById("newTime").value;
+  const title = document.getElementById("newTitle").value.trim();
+  const desc = document.getElementById("newDesc").value.trim();
+  
+  if(!time || !title) return alert("Jam dan Nama Jadwal wajib diisi!");
 
-// Hubungkan ke Firebase (Dilengkapi pengaman jika database terkunci)
-db.collection("bulking_tracker").where("date", "==", dateKey).onSnapshot(snapshot => {
-  let completedIds = {};
-  snapshot.forEach(doc => {
-    completedIds[doc.data().taskId] = doc.data().completed;
+  db.collection("daily_routines").add({
+    date: dateKey,
+    time: time,
+    title: title,
+    desc: desc,
+    completed: false,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
   });
-  localStorage.setItem("fallback_bulking_" + dateKey, JSON.stringify(completedIds));
-  localBackup = completedIds;
-  renderBulkingList(completedIds);
-}, error => {
-  console.log("Firebase Terkunci/Error. Menggunakan sistem penyimpanan lokal HP.", error);
-  renderBulkingList(localBackup);
+
+  document.getElementById("newTime").value = "";
+  document.getElementById("newTitle").value = "";
+  document.getElementById("newDesc").value = "";
+}
+
+// Toggle Check
+function toggleCheck(docId, currentStatus) {
+  db.collection("daily_routines").doc(docId).update({ completed: !currentStatus });
+}
+
+// Hapus Jadwal
+function deleteSchedule(docId) {
+  if(confirm("Hapus jadwal ini?")) {
+    db.collection("daily_routines").doc(docId).delete();
+  }
+}
+
+// Tarik data realtime dari Firebase
+db.collection("daily_routines")
+  .where("date", "==", dateKey)
+  .onSnapshot(snapshot => {
+    mySchedule = [];
+    snapshot.forEach(doc => {
+      mySchedule.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Jika data kosong, masukkan template default
+    if(mySchedule.length === 0) {
+      injectDefaultTemplate();
+    } else {
+      renderSchedule();
+    }
 });
 
-function toggleBulkingCheck(taskId, currentStatus) {
-  // Update lokal HP secara instan agar responsif saat diklik
-  localBackup[taskId] = !currentStatus;
-  localStorage.setItem("fallback_bulking_" + dateKey, JSON.stringify(localBackup));
-  renderBulkingList(localBackup);
-
-  // Kirim data cadangan ke cloud Firebase jika akses terbuka
-  const docId = `${dateKey}_${taskId}`;
-  db.collection("bulking_tracker").doc(docId).set({
-    date: dateKey,
-    taskId: taskId,
-    completed: !currentStatus
-  }, { merge: true }).catch(err => {
-    console.log("Gagal sinkronisasi awan, data aman disimpan di internal HP.");
+function injectDefaultTemplate() {
+  const defaultTemplates = [
+    { time: "07:00", title: "🍳 Sarapan Pagi", desc: "1 Centong Nasi + 2 Telur" },
+    { time: "10:00", title: "🥛 Snack Pagi", desc: "Susu Milo + Pisang" },
+    { time: "16:30", title: "💪 Sesi Latihan", desc: "Sesuai program hari ini" }
+  ];
+  
+  defaultTemplates.forEach(t => {
+    db.collection("daily_routines").add({
+      date: dateKey, time: t.time, title: t.title, desc: t.desc, completed: false, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
   });
 }
 
-// ==========================================
-// 🔹 SISTEM PUSH NOTIFICATION ENGINE
-// ==========================================
-function requestNotificationPermission() {
+// =====================================
+// 3. PROGRESS LOGIC (Berat & Foto)
+// =====================================
+function saveWeight() {
+  const w = document.getElementById("weightInput").value;
+  const g = document.getElementById("goalInput").value;
+  if(w) {
+    localStorage.setItem("myWeight", w);
+    localStorage.setItem("myGoal", g);
+    updateWeightDisplay();
+    alert("Progress berat badan disimpan!");
+  }
+}
+
+function updateWeightDisplay() {
+  const w = localStorage.getItem("myWeight");
+  const g = localStorage.getItem("myGoal");
+  if(w) {
+    document.getElementById("weightInput").value = w;
+    let text = `Berat saat ini: ${w} kg`;
+    if(g) {
+      document.getElementById("goalInput").value = g;
+      text += ` | Target: ${g} kg (Sisa ${Math.abs(g - w)} kg lagi!)`;
+    }
+    document.getElementById("weightDisplay").innerText = text;
+  }
+}
+updateWeightDisplay(); // Panggil saat load
+
+// Foto Lokal (Menghindari limitasi quota firebase)
+function previewAndSaveImage(event) {
+  const file = event.target.files[0];
+  if(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64Image = e.target.result;
+      const imgElem = document.getElementById("photoDisplay");
+      imgElem.src = base64Image;
+      imgElem.style.display = "block";
+      
+      // Simpan di memori HP
+      try {
+        localStorage.setItem("myProgressPhoto", base64Image);
+      } catch (e) {
+        alert("Gambar terlalu besar untuk disimpan di memori internal HP.");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+// Load foto lama jika ada
+window.onload = function() {
+  const savedPhoto = localStorage.getItem("myProgressPhoto");
+  if(savedPhoto) {
+    const imgElem = document.getElementById("photoDisplay");
+    imgElem.src = savedPhoto;
+    imgElem.style.display = "block";
+  }
+};
+
+// =====================================
+// 4. NOTIFICATION ENGINE (5 Menit Sebelum)
+// =====================================
+function requestNotif() {
   if (!("Notification" in window)) {
-    alert("Browser HP/Laptop kamu tidak mengizinkan atau tidak mendukung Web Notification standard.");
+    alert("HP kamu tidak support notifikasi browser.");
   } else if (Notification.permission === "granted") {
-    alert("Sistem pengingat harian sudah aktif!");
+    alert("Notifikasi sudah aktif! (Akan bunyi 5 menit sebelum jadwal)");
+    document.getElementById("bellIcon").style.color = "#00ff00";
   } else {
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
-        alert("Akses diizinkan! Pengingat otomatis diaktifkan.");
-      } else {
-        alert("Izin ditolak. Kamu harus membuka pengaturan browser di HP secara manual untuk mengaktifkan notifikasinya.");
+        document.getElementById("bellIcon").style.color = "#00ff00";
+        alert("Sip, pengingat 5 menit aktif!");
       }
     });
   }
 }
 
-// Pengecek Jam Masakan/Latihan (Setiap 30 Detik)
+// Cek permission warna icon saat load
+if(Notification.permission === "granted") {
+  document.getElementById("bellIcon").style.color = "#00ff00";
+}
+
+// Interval cek jam
 setInterval(() => {
-  const sekarang = new Date();
-  const waktuSekarang = `${sekarang.getHours().toString().padStart(2,'0')}:${sekarang.getMinutes().toString().padStart(2,'0')}`;
-
-  if (window.Notification && Notification.permission === "granted") {
-    templateBulking.forEach(item => {
-      if (item.time === waktuSekarang) {
-        if (!localBackup[item.id]) {
-          new Notification(`Waktunya ${item.title}!`, {
-            body: item.desc,
-            icon: "https://cdn-icons-png.flaticon.com/512/3043/3043211.png"
-          });
-        }
+  if (Notification.permission !== "granted") return;
+  
+  const now = new Date();
+  
+  mySchedule.forEach(item => {
+    if(item.completed) return; // Skip jika sudah dicentang
+    
+    // Pecah jam jadwal (misal "16:30")
+    const [jam, menit] = item.time.split(':').map(Number);
+    const targetTime = new Date();
+    targetTime.setHours(jam, menit, 0, 0);
+    
+    // Hitung selisih waktu dalam menit
+    const diffMs = targetTime - now;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    // Jika tepat 5 menit sebelum jadwal
+    if (diffMins === 5) {
+      // Pastikan belum pernah dinotif untuk mencegah spam
+      const notifKey = `notif_${dateKey}_${item.id}`;
+      if(!localStorage.getItem(notifKey)) {
+        new Notification(`🔥 5 Menit lagi: ${item.title}!`, {
+          body: item.desc,
+          icon: "https://cdn-icons-png.flaticon.com/512/3043/3043211.png"
+        });
+        localStorage.setItem(notifKey, "true");
       }
-    });
-  }
-}, 30000);
-
-// ==========================================
-// 🔹 LOGIKA CORE INTERFACE LAMA (TASKS & SCHEDULE)
-// ==========================================
-function addTask() {
-  const text = document.getElementById("taskText").value.trim();
-  const time = document.getElementById("taskTime").value;
-  const reminder = +document.getElementById("taskReminder").value;
-  if (!text || !time) return alert("Lengkapi data tugas");
-
-  db.collection("tasks").add({
-    text,
-    time,
-    reminder,
-    completed: false,
-    reminded: false,
-    alarmed: false,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }
   });
-
-  document.getElementById("taskText").value = "";
-  document.getElementById("taskTime").value = "";
-}
-
-function toggleTask(id, current) {
-  db.collection("tasks").doc(id).update({ completed: !current });
-}
-
-function delTask(id) {
-  if (confirm("Hapus tugas?")) {
-    db.collection("tasks").doc(id).delete();
-  }
-}
-
-db.collection("tasks").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-  const list = document.getElementById("taskList");
-  list.innerHTML = "";
-  snapshot.forEach(doc => {
-    const t = doc.data();
-    const dt = new Date(t.time);
-    const div = document.createElement("div");
-    div.className = "task" + (t.completed ? " completed" : "");
-    div.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${t.completed ? "checked" : ""} onchange="toggleTask('${doc.id}', ${t.completed})">
-        <div class="task-text">
-          <b>${t.text}</b>
-          <small>⏰ ${dt.toLocaleString()}</small>
-        </div>
-      </div>
-      <button onclick="delTask('${doc.id}')">🗑️</button>
-    `;
-    list.appendChild(div);
-  });
-});
-
-function addSchedule() {
-  const text = document.getElementById("scheduleText").value.trim();
-  const time = document.getElementById("scheduleTime").value;
-  if (!text || !time) return alert("Lengkapi data jadwal");
-
-  db.collection("schedule").add({
-    text,
-    time,
-    completed: false,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  document.getElementById("scheduleText").value = "";
-  document.getElementById("scheduleTime").value = "";
-}
-
-function toggleSchedule(id, current) {
-  db.collection("schedule").doc(id).update({ completed: !current });
-}
-
-function delSchedule(id) {
-  if (confirm("Hapus jadwal?")) {
-    db.collection("schedule").doc(id).delete();
-  }
-}
-
-db.collection("schedule").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-  const list = document.getElementById("scheduleList");
-  list.innerHTML = "";
-  snapshot.forEach(doc => {
-    const s = doc.data();
-    const dt = new Date(s.time);
-    const div = document.createElement("div");
-    div.className = "task" + (s.completed ? " completed" : "");
-    div.innerHTML = `
-      <div class="task-content">
-        <input type="checkbox" ${s.completed ? "checked" : ""} onchange="toggleSchedule('${doc.id}', ${s.completed})">
-        <div class="task-text">
-          <b>${s.text}</b>
-          <small>⏰ ${dt.toLocaleString()}</small>
-        </div>
-      </div>
-      <button onclick="delSchedule('${doc.id}')">🗑️</button>
-    `;
-    list.appendChild(div);
-  });
-});
+}, 30000); // Cek setiap 30 detik
