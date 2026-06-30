@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>History — AQUA SENTINEL</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#00c2a8"/>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="config.js"></script>
+</head>
+<body class="hidden">
+
+<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">AQUA <span>SENTINEL</span></p></div>
+<div id="toast"></div>
+<div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
+
+<div class="header">
+  <div class="header-left">
+    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <span class="user-badge" id="userBadge">—</span>
+  </div>
+  <div class="header-right">
+    <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<div class="page-content">
+
+  <div class="card">
+    <p class="card-title">📋 Riwayat Pembacaan Sensor</p>
+    <div class="chart-tabs">
+      <button class="chart-tab active" data-range="50" onclick="setRange(this,50)">50 Terakhir</button>
+      <button class="chart-tab" data-range="100" onclick="setRange(this,100)">100 Terakhir</button>
+      <button class="chart-tab" data-range="500" onclick="setRange(this,500)">500 Terakhir</button>
+    </div>
+    <button class="btn-secondary" onclick="exportCSV()">⬇ Export ke CSV</button>
+  </div>
+
+  <div class="card">
+    <div id="historyTableWrap">
+      <div class="loading-state"><div class="loading-spinner"></div><p>Memuat riwayat...</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="card-title">🔔 Log Peringatan (EWS)</p>
+    <div id="alertLogWrap">
+      <div class="loading-state"><div class="loading-spinner"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="ni">📊</span>Dashboard</a>
+  <a href="history.html" class="nav-item active"><span class="ni">📋</span>History</a>
+  <a href="prediction.html" class="nav-item"><span class="ni">🔮</span>Prediksi</a>
+  <a href="settings.html" class="nav-item"><span class="ni">⚙️</span>Settings</a>
+</div>
+
+<script src="app.js"></script>
+<script>
+const { PATHS, FIELD_MAP } = window.AQUA_CONFIG;
+let currentRange = 50;
+let historyData = [];
+
+function onAuthReady() {
+  loadHistory();
+  loadAlertLog();
+}
+
+function setRange(btn, n) {
+  document.querySelectorAll('.chart-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRange = n;
+  loadHistory();
+}
+
+function loadHistory() {
+  document.getElementById('historyTableWrap').innerHTML = `<div class="loading-state"><div class="loading-spinner"></div></div>`;
+  rtdb.ref(PATHS.sensorHistory).limitToLast(currentRange).once('value')
+    .then(snap => {
+      historyData = [];
+      snap.forEach(child => historyData.push(child.val()));
+      historyData.reverse();
+      renderHistoryTable();
+    })
+    .catch(err => {
+      document.getElementById('historyTableWrap').innerHTML =
+        `<div class="empty-state"><div class="ei">⚠️</div><p>Gagal memuat: ${err.message}</p></div>`;
+    });
+}
+
+function renderHistoryTable() {
+  const wrap = document.getElementById('historyTableWrap');
+  if (historyData.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="ei">📡</div>
+        <p>Belum ada riwayat data sensor.<br>Data akan muncul otomatis begitu sensor terhubung.</p>
+      </div>`;
+    return;
+  }
+  let rows = '';
+  historyData.forEach(v => {
+    const ph = Number(v[FIELD_MAP.ph]), suhu = Number(v[FIELD_MAP.suhu]),
+          doo = Number(v[FIELD_MAP.do]), tds = Number(v[FIELD_MAP.tds]),
+          ts = v[FIELD_MAP.timestamp];
+    const phStatus = evaluateStatus('ph', ph);
+    rows += `<tr>
+      <td>${formatDateTime(ts)}</td>
+      <td>${isNaN(ph)?'—':ph.toFixed(2)} <span class="badge-mini ${phStatus}">${statusLabel(phStatus)}</span></td>
+      <td>${isNaN(suhu)?'—':suhu.toFixed(1)}</td>
+      <td>${isNaN(doo)?'—':doo.toFixed(1)}</td>
+      <td>${isNaN(tds)?'—':tds.toFixed(0)}</td>
+    </tr>`;
+  });
+  wrap.innerHTML = `
+    <div style="overflow-x:auto;">
+    <table class="history-table">
+      <thead><tr><th>Waktu</th><th>pH</th><th>Suhu(°C)</th><th>DO(mg/L)</th><th>TDS(ppm)</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div>`;
+}
+
+function exportCSV() {
+  if (historyData.length === 0) return showToast('⚠️ Tidak ada data untuk diekspor.', true);
+  let csv = 'Waktu,pH,Suhu(C),DO(mg/L),TDS(ppm)\n';
+  historyData.forEach(v => {
+    const ts = v[FIELD_MAP.timestamp];
+    csv += `${formatDateTime(ts)},${v[FIELD_MAP.ph]||''},${v[FIELD_MAP.suhu]||''},${v[FIELD_MAP.do]||''},${v[FIELD_MAP.tds]||''}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `riwayat_kolam_${Date.now()}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ CSV berhasil diunduh!');
+}
+
+function loadAlertLog() {
+  rtdb.ref(PATHS.alertLog).limitToLast(30).once('value')
+    .then(snap => {
+      const items = [];
+      snap.forEach(child => items.push(child.val()));
+      items.reverse();
+      const wrap = document.getElementById('alertLogWrap');
+      if (items.length === 0) {
+        wrap.innerHTML = `<div class="empty-state"><div class="ei">✅</div><p>Belum ada peringatan tercatat.</p></div>`;
+        return;
+      }
+      wrap.innerHTML = items.map(it => `
+        <div class="status-row">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:${it.type==='danger'?'var(--danger)':'var(--warn)'};">${escHtml(it.title||'Peringatan')}</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${escHtml(it.message||'')}</div>
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);white-space:nowrap;margin-left:8px;">${timeAgo(it.timestamp)}</div>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      document.getElementById('alertLogWrap').innerHTML = `<div class="empty-state"><p>Gagal memuat log.</p></div>`;
+    });
+}
+</script>
+</body>
+</html>

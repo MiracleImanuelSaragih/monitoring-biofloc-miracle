@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Settings — AQUA SENTINEL</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#00c2a8"/>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="config.js"></script>
+</head>
+<body class="hidden">
+
+<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">AQUA <span>SENTINEL</span></p></div>
+<div id="toast"></div>
+<div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
+
+<div class="header">
+  <div class="header-left">
+    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <span class="user-badge" id="userBadge">—</span>
+  </div>
+  <div class="header-right">
+    <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<div class="page-content">
+
+  <!-- Notification -->
+  <div class="card">
+    <p class="card-title">🔔 Notifikasi Peringatan Dini</p>
+    <div class="status-row">
+      <span class="sr-label">Status Izin Notifikasi</span>
+      <span class="pill" id="notifStatusPill">—</span>
+    </div>
+    <button class="btn-primary" style="margin-top:10px;" onclick="requestNotif()">Aktifkan / Cek Notifikasi</button>
+  </div>
+
+  <!-- Threshold settings -->
+  <div class="card">
+    <p class="card-title">🎯 Pengaturan Ambang Batas (Threshold)</p>
+    <p style="font-size:11px;color:var(--text-dim);margin:-6px 0 14px;">
+      Batas <b>Waspada</b> = mulai keluar rentang ideal. Batas <b>Bahaya</b> = kondisi kritis perlu tindakan segera.
+    </p>
+
+    <div id="thresholdForm">
+      <div class="loading-state"><div class="loading-spinner"></div></div>
+    </div>
+
+    <button class="btn-primary" onclick="saveThresholds()" style="margin-top:6px;">💾 Simpan Pengaturan</button>
+    <button class="btn-secondary" onclick="resetThresholds()" style="margin-top:8px;">↺ Kembalikan ke Default Nila Bioflok</button>
+  </div>
+
+  <!-- Firebase connection guide -->
+  <div class="card">
+    <p class="card-title">🔗 Koneksi Sumber Data Sensor</p>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.7;">
+      Saat ini sensor <b>belum mengirim data</b> ke proyek Firebase ini. Untuk menghubungkan sensor (milikmu sendiri
+      atau punya Firebase teman yang sudah berjalan), edit file <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;">config.js</code>
+      di project web ini:
+    </p>
+    <ol style="font-size:12px;color:var(--text-dim);line-height:1.9;padding-left:20px;margin-top:8px;">
+      <li>Cek di Firebase Console punya teman: <b>Realtime Database</b> atau <b>Firestore</b>? (lihat menu kiri).</li>
+      <li>Minta teman menambahkanmu sebagai <b>member project</b> di Project Settings → Users and permissions.</li>
+      <li>Salin <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;">firebaseConfig</code> milik teman, ganti bagian <b>FIREBASE_CONFIG</b> di <code>config.js</code>.</li>
+      <li>Cek struktur datanya di tab Realtime Database (pohon data), lalu sesuaikan bagian <b>PATHS</b> & <b>FIELD_MAP</b> di <code>config.js</code> supaya namanya cocok.</li>
+      <li>Refresh web ini — data sensor akan otomatis muncul di Dashboard.</li>
+    </ol>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">
+      Lihat komentar lengkap & contoh di bagian atas file <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;">config.js</code>.
+    </p>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="ni">📊</span>Dashboard</a>
+  <a href="history.html" class="nav-item"><span class="ni">📋</span>History</a>
+  <a href="prediction.html" class="nav-item"><span class="ni">🔮</span>Prediksi</a>
+  <a href="settings.html" class="nav-item active"><span class="ni">⚙️</span>Settings</a>
+</div>
+
+<script src="app.js"></script>
+<script>
+const { PATHS, DEFAULT_THRESHOLDS } = window.AQUA_CONFIG;
+
+const PARAM_META = {
+  ph:   { label: '🧪 pH', unit: '' },
+  suhu: { label: '🌡️ Suhu', unit: '°C' },
+  do:   { label: '💧 DO (Oksigen Terlarut)', unit: 'mg/L' },
+  tds:  { label: '🌫️ TDS', unit: 'ppm' }
+};
+
+function onAuthReady() {
+  updateNotifPill();
+  renderThresholdForm(window.currentThresholds);
+}
+function onThresholdsUpdated(t) {
+  if (!document.getElementById('ph_min')) renderThresholdForm(t); // hanya isi sekali di load awal
+}
+
+function updateNotifPill() {
+  const pill = document.getElementById('notifStatusPill');
+  if (Notification.permission === 'granted') { pill.textContent = '✅ Aktif'; pill.className = 'pill ok'; }
+  else if (Notification.permission === 'denied') { pill.textContent = '❌ Ditolak'; pill.className = 'pill pending'; }
+  else { pill.textContent = '⚪ Belum diatur'; pill.className = 'pill off'; }
+}
+
+function renderThresholdForm(thresholds) {
+  const wrap = document.getElementById('thresholdForm');
+  let html = '';
+  Object.keys(PARAM_META).forEach(p => {
+    const m = PARAM_META[p];
+    const t = thresholds[p] || DEFAULT_THRESHOLDS[p];
+    html += `
+      <div class="thresh-group">
+        <div class="tg-title">${m.label} <span style="font-size:11px;color:var(--text-dim);">(${m.unit||'-'})</span></div>
+        <p style="font-size:10px;color:var(--text-dim);margin-bottom:6px;">Rentang Normal</p>
+        <div class="thresh-range">
+          <input type="number" step="0.1" id="${p}_min" value="${t.min}" placeholder="Min">
+          <span class="tr-sep">—</span>
+          <input type="number" step="0.1" id="${p}_max" value="${t.max}" placeholder="Max">
+        </div>
+        <p style="font-size:10px;color:var(--text-dim);margin:10px 0 6px;">Batas Bahaya (di luar ini = kritis)</p>
+        <div class="thresh-range">
+          <input type="number" step="0.1" id="${p}_danger_min" value="${t.danger_min}" placeholder="Min Bahaya">
+          <span class="tr-sep">—</span>
+          <input type="number" step="0.1" id="${p}_danger_max" value="${t.danger_max}" placeholder="Max Bahaya">
+        </div>
+      </div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+function saveThresholds() {
+  const updated = {};
+  Object.keys(PARAM_META).forEach(p => {
+    updated[p] = {
+      min: parseFloat(document.getElementById(`${p}_min`).value),
+      max: parseFloat(document.getElementById(`${p}_max`).value),
+      danger_min: parseFloat(document.getElementById(`${p}_danger_min`).value),
+      danger_max: parseFloat(document.getElementById(`${p}_danger_max`).value),
+      unit: PARAM_META[p].unit
+    };
+  });
+  rtdb.ref(PATHS.thresholds).set(updated)
+    .then(() => showToast('✅ Pengaturan threshold disimpan!'))
+    .catch(err => showToast('❌ Gagal: ' + err.message, true));
+}
+
+function resetThresholds() {
+  if (!confirm('Kembalikan semua threshold ke nilai default standar nila bioflok?')) return;
+  rtdb.ref(PATHS.thresholds).set(DEFAULT_THRESHOLDS)
+    .then(() => { renderThresholdForm(DEFAULT_THRESHOLDS); showToast('↺ Threshold dikembalikan ke default.'); })
+    .catch(err => showToast('❌ Gagal: ' + err.message, true));
+}
+</script>
+</body>
+</html>

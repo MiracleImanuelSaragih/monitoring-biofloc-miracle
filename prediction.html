@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Prediksi pH — AQUA SENTINEL</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#00c2a8"/>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body class="hidden">
+
+<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">AQUA <span>SENTINEL</span></p></div>
+<div id="toast"></div>
+<div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
+
+<div class="header">
+  <div class="header-left">
+    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <span class="user-badge" id="userBadge">—</span>
+  </div>
+  <div class="header-right">
+    <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<div class="ews-banner" id="ewsBanner"></div>
+
+<div class="page-content">
+
+  <!-- Forecast result -->
+  <div class="card">
+    <p class="card-title">🔮 Prediksi & Early Warning System</p>
+    <div class="forecast-box" id="forecastBox">
+      <div class="fb-label">STATUS PREDIKSI</div>
+      <div class="fb-value" id="fbValue">Mengumpulkan data...</div>
+      <div class="fb-sub" id="fbSub">Sistem memerlukan data history pH untuk membuat prediksi.</div>
+      <div class="method-badge" id="methodBadge">Metode: —</div>
+    </div>
+  </div>
+
+  <!-- Chart with forecast line -->
+  <div class="card">
+    <p class="card-title">📈 Tren pH + Proyeksi</p>
+    <div class="chart-wrap"><canvas id="forecastChart"></canvas></div>
+    <div class="empty-state" id="forecastEmpty" style="display:none;">
+      <div class="ei">📊</div>
+      <p>Belum cukup data untuk membuat grafik proyeksi.<br>Minimal <b id="minPointsText">8</b> titik data dibutuhkan.</p>
+    </div>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:10px;line-height:1.5;">
+      <b>Garis solid</b> = data aktual pH. <b>Garis putus-putus</b> = proyeksi tren ke depan.
+    </p>
+  </div>
+
+  <!-- Methodology explanation -->
+  <div class="card">
+    <p class="card-title">🧠 Tentang Metode Prediksi</p>
+    <div id="methodExplain" style="font-size:12px;color:var(--text-dim);line-height:1.7;"></div>
+  </div>
+
+  <!-- Upgrade to RF instructions -->
+  <div class="card">
+    <p class="card-title">⬆️ Upgrade ke Random Forest (Opsional)</p>
+    <p style="font-size:12px;color:var(--text-dim);line-height:1.7;">
+      Saat data history sudah cukup banyak (disarankan 200+ baris, mencakup variasi kondisi normal & tidak normal),
+      kamu bisa melatih model <b>Random Forest Regressor</b> di Python menggunakan data dari halaman History (export CSV).
+      Setelah model dilatih, buat script Python kecil yang berjalan periodik (misal tiap 1 jam via cron/scheduler) untuk
+      menghitung prediksi dan menulis hasilnya ke path Firebase:
+      <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;font-size:11px;">predictions/ph_forecast</code>
+      dengan format <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;font-size:11px;">{predicted_ph, hours_ahead, generated_at}</code>.
+      Web ini <b>otomatis akan memakai hasil Random Forest tersebut</b> dan berhenti memakai metode regresi tren sederhana — tidak perlu mengubah kode web sama sekali.
+    </p>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="index.html" class="nav-item"><span class="ni">📊</span>Dashboard</a>
+  <a href="history.html" class="nav-item"><span class="ni">📋</span>History</a>
+  <a href="prediction.html" class="nav-item active"><span class="ni">🔮</span>Prediksi</a>
+  <a href="settings.html" class="nav-item"><span class="ni">⚙️</span>Settings</a>
+</div>
+
+<script src="app.js"></script>
+<script>
+const { PATHS, FIELD_MAP, EWS_CONFIG } = window.AQUA_CONFIG;
+let forecastChart = null;
+
+function onAuthReady() {
+  document.getElementById('minPointsText').textContent = EWS_CONFIG.minDataPointsForTrend;
+  checkRFPrediction();
+}
+
+// ════════════════════════════════════════════════════════════
+// STEP 1: Cek apakah ada prediksi Random Forest dari Python
+// ════════════════════════════════════════════════════════════
+function checkRFPrediction() {
+  rtdb.ref(PATHS.phPrediction).once('value')
+    .then(snap => {
+      const rf = snap.val();
+      // Anggap valid kalau ada & umurnya < 6 jam (supaya tidak pakai prediksi basi)
+      const isFresh = rf && rf.generated_at && (Date.now() - rf.generated_at) < 6 * 3600 * 1000;
+      if (isFresh) {
+        useRFForecast(rf);
+      } else {
+        useFallbackTrend();
+      }
+    })
+    .catch(() => useFallbackTrend());
+}
+
+function useRFForecast(rf) {
+  document.getElementById('methodBadge').textContent = `Metode: Random Forest (${rf.model || 'RF'}) ${rf.confidence ? '· Confidence ' + Math.round(rf.confidence*100)+'%' : ''}`;
+  const breach = checkBreach(rf.predicted_ph);
+  showForecastResult(rf.predicted_ph, rf.hours_ahead, breach);
+  loadHistoryAndRenderChart(rf);
+
+  document.getElementById('methodExplain').innerHTML = `
+    Prediksi ini dihasilkan oleh model <b>Random Forest Regressor</b> yang dilatih menggunakan data historis
+    sensor kolam. Model memproyeksikan nilai pH ${rf.hours_ahead} jam ke depan berdasarkan pola yang dipelajari
+    dari kombinasi pH, suhu, DO, dan TDS sebelumnya. Prediksi terakhir di-generate pada
+    ${formatDateTime(rf.generated_at)}.`;
+
+  runPredictiveEWS({ predicted_ph: rf.predicted_ph, hours_ahead: rf.hours_ahead, willBreach: breach.willBreach, breachType: breach.type });
+}
+
+// ════════════════════════════════════════════════════════════
+// STEP 2 (Fallback): Regresi tren linear sederhana di browser
+// ════════════════════════════════════════════════════════════
+function useFallbackTrend() {
+  document.getElementById('methodBadge').textContent = 'Metode: Regresi Tren Linear (sementara, sebelum RF aktif)';
+  document.getElementById('methodExplain').innerHTML = `
+    Karena model Random Forest belum terhubung, sistem memakai <b>regresi tren linear sederhana</b> dari
+    ${EWS_CONFIG.minDataPointsForTrend}+ titik data pH terakhir sebagai prediksi cadangan (baseline).
+    Pendekatan ini menghitung kemiringan (slope) perubahan pH dari waktu ke waktu untuk memproyeksikan
+    nilai ${EWS_CONFIG.forecastHorizonHours} jam ke depan. Ini adalah <b>Early Warning System reaktif berbasis tren</b> —
+    bukan machine learning penuh, tapi tetap mampu mendeteksi arah pergerakan pH sebelum melewati ambang batas.
+    Untuk akurasi lebih tinggi, upgrade ke Random Forest (lihat panduan di bawah).`;
+
+  rtdb.ref(PATHS.sensorHistory).limitToLast(50).once('value')
+    .then(snap => {
+      const data = [];
+      snap.forEach(child => {
+        const v = child.val();
+        if (v && v[FIELD_MAP.ph] !== undefined && v[FIELD_MAP.timestamp]) {
+          data.push({ t: Number(v[FIELD_MAP.timestamp]), ph: Number(v[FIELD_MAP.ph]) });
+        }
+      });
+
+      if (data.length < EWS_CONFIG.minDataPointsForTrend) {
+        document.getElementById('fbValue').textContent = 'Data Belum Cukup';
+        document.getElementById('fbSub').textContent =
+          `Baru ada ${data.length} titik data. Minimal ${EWS_CONFIG.minDataPointsForTrend} dibutuhkan untuk prediksi tren.`;
+        document.getElementById('forecastEmpty').style.display = 'block';
+        return;
+      }
+
+      const { slope, intercept } = linearRegression(data);
+      const lastT = data[data.length - 1].t;
+      const futureT = lastT + EWS_CONFIG.forecastHorizonHours * 3600 * 1000;
+      const predictedPh = slope * futureT + intercept;
+
+      const breach = checkBreach(predictedPh);
+      showForecastResult(predictedPh, EWS_CONFIG.forecastHorizonHours, breach);
+      renderForecastChart(data, slope, intercept, EWS_CONFIG.forecastHorizonHours);
+
+      runPredictiveEWS({ predicted_ph: predictedPh, hours_ahead: EWS_CONFIG.forecastHorizonHours, willBreach: breach.willBreach, breachType: breach.type });
+    })
+    .catch(err => {
+      document.getElementById('fbValue').textContent = 'Gagal Memuat Data';
+      document.getElementById('fbSub').textContent = err.message;
+    });
+}
+
+function linearRegression(data) {
+  const n = data.length;
+  const t0 = data[0].t; // normalisasi waktu agar angka tidak terlalu besar
+  const xs = data.map(d => (d.t - t0) / 3600000); // jam sejak titik pertama
+  const ys = data.map(d => d.ph);
+  const sumX = xs.reduce((a,b)=>a+b,0), sumY = ys.reduce((a,b)=>a+b,0);
+  const sumXY = xs.reduce((a,x,i)=>a+x*ys[i],0);
+  const sumXX = xs.reduce((a,x)=>a+x*x,0);
+  const slope = (n*sumXY - sumX*sumY) / (n*sumXX - sumX*sumX || 1);
+  const intercept = (sumY - slope*sumX) / n;
+  // Kembalikan dalam skala waktu asli (ms) untuk kemudahan pakai
+  return {
+    slope: slope / 3600000,
+    intercept: intercept - (slope / 3600000) * t0
+  };
+}
+
+function checkBreach(predictedPh) {
+  const t = window.currentThresholds.ph;
+  if (predictedPh < t.danger_min || predictedPh > t.danger_max) return { willBreach: true, type: 'danger' };
+  if (predictedPh < t.min || predictedPh > t.max) return { willBreach: true, type: 'warn' };
+  return { willBreach: false, type: 'normal' };
+}
+
+function showForecastResult(predictedPh, hoursAhead, breach) {
+  const box = document.getElementById('forecastBox');
+  box.className = 'forecast-box ' + (breach.type === 'normal' ? '' : breach.type);
+  document.getElementById('fbValue').textContent = `pH ${predictedPh.toFixed(2)} dalam ${hoursAhead} jam`;
+  document.getElementById('fbSub').textContent = breach.willBreach
+    ? (breach.type === 'danger'
+        ? '🚨 Proyeksi menunjukkan pH akan mencapai level BAHAYA. Segera lakukan tindakan (cek aerasi, kapur/dolomit, sirkulasi air).'
+        : '⚠️ Proyeksi menunjukkan pH bergerak ke arah tidak ideal. Pantau lebih ketat dalam beberapa jam ke depan.')
+    : '✅ Proyeksi pH masih dalam rentang aman untuk budidaya nila bioflok.';
+}
+
+// ── Chart dengan garis proyeksi putus-putus ───────────────────
+function renderForecastChart(data, slope, intercept, hoursAhead) {
+  const lastT = data[data.length - 1].t;
+  const futureT = lastT + hoursAhead * 3600 * 1000;
+  const futurePh = slope * futureT + intercept;
+
+  const allLabels = data.map(d => new Date(d.t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}))
+    .concat([new Date(futureT).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) + ' (+'+hoursAhead+'j)']);
+
+  const actualData = data.map(d => d.ph).concat([null]);
+  const forecastData = new Array(data.length - 1).fill(null).concat([data[data.length-1].ph, futurePh]);
+
+  drawChart(allLabels, actualData, forecastData);
+}
+
+function loadHistoryAndRenderChart(rf) {
+  rtdb.ref(PATHS.sensorHistory).limitToLast(50).once('value')
+    .then(snap => {
+      const data = [];
+      snap.forEach(child => {
+        const v = child.val();
+        if (v && v[FIELD_MAP.ph] !== undefined && v[FIELD_MAP.timestamp]) {
+          data.push({ t: Number(v[FIELD_MAP.timestamp]), ph: Number(v[FIELD_MAP.ph]) });
+        }
+      });
+      if (data.length === 0) { document.getElementById('forecastEmpty').style.display = 'block'; return; }
+      const futureT = (data[data.length-1].t) + rf.hours_ahead * 3600 * 1000;
+      const allLabels = data.map(d => new Date(d.t).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}))
+        .concat([new Date(futureT).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})+' (+'+rf.hours_ahead+'j)']);
+      const actualData = data.map(d => d.ph).concat([null]);
+      const forecastData = new Array(data.length - 1).fill(null).concat([data[data.length-1].ph, rf.predicted_ph]);
+      drawChart(allLabels, actualData, forecastData);
+    });
+}
+
+function drawChart(labels, actualData, forecastData) {
+  const ctx = document.getElementById('forecastChart');
+  const t = window.currentThresholds.ph;
+  if (forecastChart) forecastChart.destroy();
+  forecastChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'pH Aktual', data: actualData, borderColor:'#00c2a8', backgroundColor:'rgba(0,194,168,.1)', fill:true, tension:.35, pointRadius:0, borderWidth:2 },
+        { label:'Proyeksi', data: forecastData, borderColor:'#f5a623', borderDash:[6,4], pointRadius:3, pointBackgroundColor:'#f5a623', tension:0, borderWidth:2, fill:false }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#5f7587', font:{size:10} } } },
+      scales:{
+        x:{ ticks:{ color:'#5f7587', maxTicksLimit:6 }, grid:{ color:'#1c2a35' } },
+        y:{ min:(t.danger_min-1), max:(t.danger_max+1), ticks:{ color:'#5f7587' }, grid:{ color:'#1c2a35' } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
