@@ -16,6 +16,10 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Abaikan request yang bukan http/https (mis: chrome-extension://, dll)
+  // supaya Service Worker tidak mencoba meng-cache-nya dan error.
+  if (!e.request.url.startsWith('http')) return;
+
   const url = e.request.url;
   if (url.includes('firebaseio.com') || url.includes('googleapis.com') || url.includes('firebasedatabase.app')) {
     e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));

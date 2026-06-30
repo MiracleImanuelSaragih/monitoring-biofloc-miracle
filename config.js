@@ -20,6 +20,12 @@
 // and permissions > Add member) supaya Authentication & Database
 // rules mengizinkan akun kamu mengakses data.
 
+// ⚠️ Seluruh isi file ini dibungkus IIFE (function() {...})() supaya
+// variabel di dalamnya TIDAK bentrok dengan file .js lain yang dimuat
+// di halaman yang sama. JANGAN hapus baris "(function() {" di bawah
+// atau "})();" di paling bawah file ini.
+(function () {
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyAcnTpDBXO2WpXs3ri21SXJfzUMC_xkCkU",
   authDomain: "premium-todo-list.firebaseapp.com",
@@ -119,3 +125,5 @@ const EWS_CONFIG = {
 
 // Jangan ubah baris-baris di bawah ini ↓
 window.AQUA_CONFIG = { FIREBASE_CONFIG, PATHS, FIELD_MAP, DEFAULT_THRESHOLDS, EWS_CONFIG };
+
+})(); // ← penutup IIFE, jangan dihapus

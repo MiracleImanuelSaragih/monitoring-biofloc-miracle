@@ -4,7 +4,11 @@
 //  Dipakai di semua halaman (dashboard, history, prediction, settings).
 // ════════════════════════════════════════════════════════════
 
-//const { FIREBASE_CONFIG, PATHS, FIELD_MAP, DEFAULT_THRESHOLDS, EWS_CONFIG } = window.AQUA_CONFIG;
+const FIREBASE_CONFIG = window.AQUA_CONFIG.FIREBASE_CONFIG;
+const PATHS = window.AQUA_CONFIG.PATHS;
+const FIELD_MAP = window.AQUA_CONFIG.FIELD_MAP;
+const DEFAULT_THRESHOLDS = window.AQUA_CONFIG.DEFAULT_THRESHOLDS;
+const EWS_CONFIG = window.AQUA_CONFIG.EWS_CONFIG;
 
 if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();

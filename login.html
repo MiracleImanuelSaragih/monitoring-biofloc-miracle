@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Login — BIOFLOC MONIORING POLTEK</title>
+<title>Login — AQUA SENTINEL</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -71,8 +71,8 @@ body::before{
 
 <div class="logo-area">
   <div class="logo-icon">🐟</div>
-  <h1 class="logo-title">BIOFLOC <span>MONITORING</span></h1>
-  <p class="logo-sub">REAL-TIME WATER QUALITY MONITORING <br>BIOFLOK NILA; </p>
+  <h1 class="logo-title">AQUA <span>SENTINEL</span></h1>
+  <p class="logo-sub">REAL-TIME WATER QUALITY MONITORING<br>BIOFLOK NILA &middot; PREDIKSI pH &middot; EARLY WARNING SYSTEM</p>
 </div>
 
 <div class="login-card">
@@ -106,8 +106,8 @@ body::before{
 </div>
 
 <script>
-const { FIREBASE_CONFIG } = window.AQUA_CONFIG;
-if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+const FB_CFG = window.AQUA_CONFIG.FIREBASE_CONFIG;
+if (!firebase.apps.length) firebase.initializeApp(FB_CFG);
 const auth = firebase.auth();
 
 auth.onAuthStateChanged(user => { if (user) window.location.replace('./index.html'); });

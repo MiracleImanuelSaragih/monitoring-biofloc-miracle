@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Dashboard — BIOFOC MONITORING</title>
+<title>Dashboard — AQUA SENTINEL</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link rel="stylesheet" href="style.css">
@@ -17,7 +17,7 @@
 
 <div id="authGate">
   <div class="ag-spin"></div>
-  <p class="ag-ttl">BIOFLOC <span>MONITORING</span></p>
+  <p class="ag-ttl">AQUA <span>SENTINEL</span></p>
 </div>
 
 <div id="toast"></div>
@@ -25,7 +25,7 @@
 
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
+    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
@@ -114,7 +114,8 @@
 
 <script src="app.js"></script>
 <script>
-//const { PATHS, FIELD_MAP } = window.AQUA_CONFIG;
+// PATHS & FIELD_MAP sudah otomatis tersedia secara global dari app.js,
+// tidak perlu dideklarasikan ulang di sini.
 let phChart = null;
 let lastSensorTimestamp = null;
 
