@@ -1,333 +1,31 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>DAILY OVERCOMER</title>
-  <link rel="manifest" href="manifest.json"/>
-  <meta name="theme-color" content="#ff6b00"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <!-- Firebase SDK v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
-
-   :root {
-  --bg-main: #f4f6f9;           
-  --bg-card: #ffffff;         
-  --bg-input: #f8fafc;         
-  --accent: #ff6b00;            
-  --accent-dim: rgba(255,107,0,0.08);
-  --accent-glow: 0 4px 14px rgba(255,107,0,0.3);
-  --text: #0f172a;         
-  --text-dim: #64748b;          
-  --border: #e2e8f0;         
-  --green: #16a34a;            
-  --red: #dc2626;             
-}
-
-    * { box-sizing: border-box; }
-
-    /* Auth loading screen */
-    #authGate {
-      position: fixed; inset: 0;
-      background: var(--bg-main);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 9999;
-    }
-    #authGate .ag-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 28px; font-weight: 800;
-      letter-spacing: 3px; color: var(--text); margin-top: 16px;
-    }
-    #authGate .ag-title span { color: var(--accent); }
-    #authGate .ag-spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    body {
-      font-family: 'Barlow', sans-serif;
-      background-color: var(--bg-main);
-      color: var(--text);
-      margin: 0; padding: 0;
-      padding-bottom: 90px;
-      min-height: 100vh;
-    }
-    body.hidden { overflow: hidden; }
-
-    /* ── HEADER ── */
-    .header {
-      background: var(--bg-card);
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky; top: 0; z-index: 200;
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 2px 10px rgba(0,0,0,0.02); 
-}
-    }
-    .header-left { display: flex; align-items: center; gap: 10px; }
-    .header-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 20px; font-weight: 800; letter-spacing: 2px; margin: 0;
-    }
-    .header-title span { color: var(--accent); }
-    .user-badge {
-  font-size: 11px; 
-  color: var(--accent); 
-  font-weight: 600;    
-  background: var(--accent-dim); 
-  padding: 3px 10px; border-radius: 20px;
-  border: 1px solid rgba(255,107,0,0.15); 
-}
-    .header-right { display: flex; align-items: center; gap: 8px; }
-
-    /* Offline banner */
-   .offline-bar {
-  background: #fff7ed; border-bottom: 1px solid var(--border); 
-  text-align: center; padding: 7px;
-  font-size: 11px; color: #c2410c; 
-  font-weight: 600; 
-  display: none;
-}
-    .offline-bar.show { display: block; }
-
-    /* Bell */
-    .bell-btn {
-      background: none; border: 2px solid var(--border);
-      border-radius: 50%; width: 38px; height: 38px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; cursor: pointer; transition: all 0.3s; position: relative;
-    }
-    .bell-btn.bell-off { border-color: var(--border); filter: grayscale(1); opacity: 0.5; }
-    .bell-btn.bell-on { border-color: var(--accent); box-shadow: var(--accent-glow); animation: bell-pulse 2s infinite; }
-    .bell-btn.bell-on::after {
-      content: ''; position: absolute; top: -2px; right: -2px;
-      width: 9px; height: 9px; background: var(--green);
-      border-radius: 50%; border: 2px solid var(--bg-main);
-    }
-    @keyframes bell-pulse {
-      0%,100% { box-shadow: 0 0 8px rgba(255,107,0,0.4); }
-      50% { box-shadow: 0 0 22px rgba(255,107,0,0.8); }
-    }
-
-    /* Logout btn */
-    .logout-btn {
-      background: none; border: 1px solid var(--border);
-      border-radius: 8px; padding: 5px 10px;
-      color: var(--text-dim); font-size: 11px;
-      cursor: pointer; transition: all 0.2s; white-space: nowrap;
-    }
-    .logout-btn:hover { border-color: var(--red); color: var(--red); }
-
-    /* ── PAGES ── */
-    .page { display: none; padding: 14px; }
-    .page.active { display: block; animation: fadeIn 0.2s ease-out; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-
-    /* ── CARDS ── */
-    .card { 
-  background: var(--bg-card); 
-  border-radius: 16px; 
-  padding: 20px; 
-  margin-bottom: 16px; 
-  border: 1px solid var(--border); 
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.03); /* Ditambahkan shadow */
-}
-
-/* Modifikasi pada task card yang sudah selesai */
-.task-card.completed { 
-  opacity: 0.45; 
-  background: #f1f5f9;      /* Diubah jadi abu-abu mati */
-  border-left-color: #cbd5e1; 
-}
-    .card-title { font-family:'Barlow Condensed',sans-serif; font-size:16px; font-weight:700; letter-spacing:0.5px; margin:0 0 12px; }
-
-    /* ── INPUTS ── */
-    .input-group { display:flex; flex-direction:column; gap:9px; }
-    .input-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    input[type="time"], input[type="text"], input[type="number"] {
-      width:100%; padding:11px 13px;
-      background:var(--bg-input); border:1px solid var(--border);
-      border-radius:10px; color:var(--text);
-      font-family:'Barlow',sans-serif; font-size:14px; transition:border-color 0.2s;
-    }
-    input:focus { outline:none; border-color:var(--accent); background:rgba(255,107,0,0.04); }
-    input[type="file"] {
-      width:100%; padding:10px 13px;
-      background:var(--bg-input); border:1px solid var(--border);
-      border-radius:10px; color:var(--text-dim); font-size:13px; cursor:pointer;
-    }
-
-    /* ── BUTTONS ── */
-    .btn-primary {
-      width:100%; background:var(--accent); color:white; border:none;
-      padding:12px; border-radius:10px;
-      font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; letter-spacing:1px;
-      cursor:pointer; transition:all 0.2s; margin-top:3px;
-    }
-    .btn-primary:hover { background:#e05a00; transform:translateY(-1px); }
-    .btn-primary:disabled { background:#2d2d3f; color:var(--text-dim); cursor:not-allowed; transform:none; }
-
-    /* Toast */
-    #toast {
-      position:fixed; top:68px; left:50%; transform:translateX(-50%) translateY(-16px);
-      background:var(--green); color:white; padding:9px 18px;
-      border-radius:20px; font-size:13px; font-weight:600;
-      opacity:0; transition:all 0.3s; z-index:300; white-space:nowrap; pointer-events:none;
-    }
-    #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-    #toast.error { background:var(--red); }
-
-    /* Loading state */
-    .loading-state { text-align:center; padding:28px; color:var(--text-dim); font-size:13px; }
-    .loading-spinner {
-      width:26px; height:26px; border:2px solid var(--border);
-      border-top-color:var(--accent); border-radius:50%;
-      animation:spin 0.8s linear infinite; margin:0 auto 10px;
-    }
-
-    /* ── TASK CARDS ── */
-    .task-card {
-      background:var(--bg-input); padding:12px 14px; border-radius:11px;
-      margin-bottom:9px; border-left:4px solid var(--accent);
-      display:flex; align-items:center; gap:10px; transition:all 0.25s;
-    }
-    .task-card.completed { opacity:0.33; border-left-color:#2d2d3f; }
-    .task-card input[type="checkbox"] { width:20px; height:20px; min-width:20px; accent-color:var(--accent); cursor:pointer; }
-    .task-info { flex:1; cursor:pointer; min-width:0; }
-    .task-info h4 {
-      margin:0 0 2px; font-size:14px;
-      font-family:'Barlow Condensed',sans-serif; font-weight:600;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .task-card.completed .task-info h4 { text-decoration:line-through; color:var(--text-dim); }
-    .task-info p { margin:0; font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .task-time-badge { font-family:'Barlow Condensed',sans-serif; font-size:13px; font-weight:700; color:var(--accent); white-space:nowrap; }
-    .delete-btn { background:none; border:none; color:var(--text-dim); font-size:15px; cursor:pointer; padding:3px; border-radius:6px; transition:all 0.2s; flex-shrink:0; }
-    .delete-btn:hover { color:var(--red); background:rgba(239,68,68,0.1); }
-
-    .empty-state { text-align:center; padding:28px 16px; color:var(--text-dim); }
-    .empty-state .ei { font-size:34px; margin-bottom:8px; }
-    .empty-state p { font-size:12px; margin:0; }
-
-    .progress-header { display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-bottom:6px; }
-    .progress-bar-track { height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:14px; }
-    .progress-bar-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.5s; }
-
-    /* ── PAGE 2 ── */
-    .weight-display {
-      background:var(--accent-dim); border:1px solid rgba(255,107,0,0.3);
-      border-radius:11px; padding:14px; text-align:center; margin-top:8px;
-    }
-    .wd-label { font-size:11px; color:var(--text-dim); margin-bottom:3px; letter-spacing:1px; }
-    .wd-value { font-family:'Barlow Condensed',sans-serif; font-size:30px; font-weight:800; color:var(--accent); }
-    .wd-target { font-size:12px; color:var(--text-dim); margin-top:2px; }
-    .wd-synced { font-size:10px; color:var(--green); margin-top:5px; }
-
-    .photo-upload-label {
-      display:block; width:100%; background:var(--bg-input);
-      border:1px solid var(--border); border-radius:10px;
-      padding:11px; text-align:center; color:var(--text-dim);
-      font-size:13px; cursor:pointer; transition:all 0.2s;
-    }
-    .photo-upload-label:hover { border-color:var(--accent); color:var(--accent); }
-    #photoInput { display:none; }
-    .photo-container {
-      width:100%; min-height:200px; background:var(--bg-input);
-      border-radius:11px; border:2px dashed var(--border);
-      display:flex; align-items:center; justify-content:center;
-      overflow:hidden; margin-top:10px; transition:border-color 0.3s;
-    }
-    .photo-placeholder { text-align:center; color:var(--text-dim); pointer-events:none; }
-    .photo-placeholder .pi { font-size:38px; margin-bottom:6px; }
-    .photo-placeholder p { font-size:11px; margin:0; }
-    #photoDisplay { width:100%; max-height:420px; object-fit:cover; display:none; border-radius:9px; }
-
-    /* ── PAGE 3 ── */
-    .day-btn {
-      width:100%; background:var(--bg-input); color:var(--text);
-      border:1px solid var(--border); padding:13px 15px; border-radius:10px;
-      text-align:left; font-family:'Barlow Condensed',sans-serif;
-      font-size:15px; font-weight:600; letter-spacing:0.5px;
-      margin-bottom:5px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;
-    }
-    .day-btn:hover { border-color:var(--accent); background:var(--accent-dim); }
-    .day-btn.open { border-color:var(--accent); color:var(--accent); }
-    .day-btn .chevron { transition:transform 0.3s; font-style:normal; font-size:11px; }
-    .day-btn.open .chevron { transform:rotate(180deg); }
-    .day-content {
-      display:none; background:rgba(255,107,0,0.04);
-      border:1px solid rgba(255,107,0,0.2); border-radius:10px;
-      padding:12px; margin-bottom:8px;
-    }
-    .day-content.open { display:block; animation:fadeIn 0.2s ease-out; }
-    .workout-item {
-      padding:9px 0; border-bottom:1px solid var(--border); font-size:13px;
-      line-height:1.5; display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start;
-    }
-    .workout-item:last-child { border-bottom:none; padding-bottom:0; }
-    .workout-num { font-family:'Barlow Condensed',sans-serif; font-size:20px; font-weight:800; color:var(--accent); line-height:1.2; min-width:22px; }
-    .workout-text b { color:var(--text); display:block; font-size:14px; margin-bottom:1px; }
-    .workout-text span { color:var(--text-dim); font-size:11px; }
-    .sets-badge {
-      display:inline-block; background:var(--accent-dim);
-      border:1px solid rgba(255,107,0,0.3); color:var(--accent);
-      font-size:10px; font-weight:600; padding:1px 7px; border-radius:20px; margin-right:5px;
-    }
-    .rest-day { text-align:center; padding:14px 0; color:var(--text-dim); font-size:13px; line-height:1.6; }
-    .rest-day .ri { font-size:34px; margin-bottom:6px; }
-
-    /* ── BOTTOM NAV ── */
-.bottom-nav {
-  position:fixed; bottom:0; left:0; right:0;
-  background: var(--bg-card); display:flex; justify-content:space-around;
-  padding:12px 0 14px; border-top:1px solid var(--border); z-index:200;
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.04); /* Menggantikan border kaku dengan shadow halus */
-}
-.nav-item {
-  background:none; border:none; color:var(--text-dim);
-  font-family:'Barlow',sans-serif; font-size:11px; font-weight:600; /* Font naik ke 11px & lebih tebal */
-  display:flex; flex-direction:column; align-items:center; gap:4px;
-  cursor:pointer; padding:4px 20px; border-radius:8px; transition:all 0.2s;
-}
-.nav-item .ni { font-size:20px; line-height:1; opacity: 0.7; } /* Ukuran emoji naik & sedikit redup jika tidak aktif */
-.nav-item.active { color:var(--accent); }
-.nav-item.active .ni { opacity: 1; filter:drop-shadow(0 2px 4px rgba(255,107,0,0.2)); } /* Efek glow neon diganti shadow tipis */
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Dashboard — BIOFOC MONITORING</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#00c2a8"/>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="config.js"></script>
 </head>
 <body class="hidden">
 
-<!-- Auth Loading Gate -->
 <div id="authGate">
-  <div class="ag-spinner"></div>
-  <p class="ag-title">DAILY <span>OVERCOMER</span></p>
+  <div class="ag-spin"></div>
+  <p class="ag-ttl">BIOFLOC <span>MONITORING</span></p>
 </div>
 
-<!-- Toast -->
 <div id="toast"></div>
+<div class="offline-bar" id="offlineBar">📵 Mode Offline — data terakhir tetap ditampilkan</div>
 
-<!-- Offline bar -->
-<div class="offline-bar" id="offlineBar">📵 Mode Offline — Data tersimpan lokal, akan sync saat online</div>
-
-<!-- ── HEADER ── -->
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">DAILY <span>OVERCOMER</span></h2>
+    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
@@ -336,154 +34,213 @@
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════ -->
-<!-- PAGE 1 : JADWAL HARIAN -->
-<!-- ════════════════════════════════════════════ -->
-<div id="page-jadwal" class="page active">
+<div class="ews-banner" id="ewsBanner"></div>
+
+<div class="page-content">
+
+  <!-- Pond status summary -->
   <div class="card">
-    <p class="card-title">➕ Tambah Rutinitas Harian</p>
-    <div class="input-group">
-      <input type="time" id="newTime" required>
-      <input type="text" id="newTitle" placeholder="Nama Jadwal (mis: Makan Siang Dada Ayam)" required>
-      <input type="text" id="newDesc" placeholder="Keterangan tambahan (porsi / detail)">
-      <button class="btn-primary" id="addBtn" onclick="addNewSchedule()">+ MASUKKAN KE DAFTAR</button>
+    <p class="card-title">🐟 Status Kolam Bioflok Nila</p>
+    <div class="status-row">
+      <span class="sr-label">Kondisi Umum</span>
+      <span class="pill" id="pillOverall">—</span>
+    </div>
+    <div class="status-row">
+      <span class="sr-label">Koneksi Sensor</span>
+      <span class="pill" id="pillConn">—</span>
+    </div>
+    <div class="status-row">
+      <span class="sr-label">Update Terakhir</span>
+      <span class="sr-value" id="lastUpdateText">—</span>
     </div>
   </div>
 
-  <div class="progress-header">
-    <span id="progressLabel">Memuat jadwal...</span>
-    <span id="progressPct">—</span>
-  </div>
-  <div class="progress-bar-track">
-    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
-  </div>
-
-  <div id="scheduleList">
-    <div class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>Menghubungkan ke cloud...</p>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════ -->
-<!-- PAGE 2 : PROGRESS TRACKER -->
-<!-- ════════════════════════════════════════════ -->
-<div id="page-progress" class="page">
-  <div class="card">
-    <p class="card-title">⚖️ Catatan Berat Badan</p>
-    <div class="input-group">
-      <div class="input-row">
-        <input type="number" step="0.1" id="weightInput" placeholder="Berat skrg (kg)">
-        <input type="number" step="0.1" id="goalInput" placeholder="Target (kg)">
+  <!-- Sensor grid -->
+  <div class="sensor-grid">
+    <div class="sensor-card">
+      <div class="sc-top">
+        <div><div class="sc-label">🧪 pH Air</div><div class="sc-value" id="valPh">—<span class="sc-unit"></span></div></div>
+        <span class="sc-status offline" id="statusPh">OFFLINE</span>
       </div>
-      <button class="btn-primary" onclick="saveWeightCloud()">💾 SIMPAN & SINKRONKAN</button>
+      <div class="sc-updated" id="updatedPh">Menunggu data...</div>
     </div>
-    <div id="weightDisplay" class="weight-display" style="display:none;">
-      <div class="wd-label">BERAT BADAN TERKINI</div>
-      <div class="wd-value" id="wdCurrent">— kg</div>
-      <div class="wd-target" id="wdTarget">Target: — kg</div>
-      <div class="wd-synced">✓ Tersinkronisasi di semua perangkat</div>
-    </div>
-    <div id="weightLoading" class="loading-state" style="padding:16px;">
-      <div class="loading-spinner"></div>
-      <p>Memuat data...</p>
-    </div>
-  </div>
-
-  <div class="card">
-    <p class="card-title">📸 Foto Progres Fisik</p>
-    <p style="font-size:12px;color:var(--text-dim);margin:0 0 10px;">Update dari HP atau Laptop — otomatis tersinkronisasi.</p>
-    <label class="photo-upload-label" for="photoInput">📁 Pilih / Ganti Foto Progres</label>
-    <input type="file" id="photoInput" accept="image/*" onchange="uploadPhotoCloud(event)">
-    <div class="photo-container" id="photoContainer">
-      <div class="photo-placeholder" id="photoPlaceholder">
-        <div class="pi">📷</div>
-        <p>Belum ada foto progres</p>
-        <p style="margin-top:3px;">Unggah dari HP atau Laptop</p>
+    <div class="sensor-card">
+      <div class="sc-top">
+        <div><div class="sc-label">🌡️ Suhu Air</div><div class="sc-value" id="valSuhu">—<span class="sc-unit">°C</span></div></div>
+        <span class="sc-status offline" id="statusSuhu">OFFLINE</span>
       </div>
-      <img id="photoDisplay" alt="Foto Progres">
+      <div class="sc-updated" id="updatedSuhu">Menunggu data...</div>
     </div>
-    <div id="photoUploadStatus" style="font-size:11px;color:var(--text-dim);text-align:center;margin-top:6px;"></div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════ -->
-<!-- PAGE 3 : PROGRAM LATIHAN -->
-<!-- ════════════════════════════════════════════ -->
-<div id="page-latihan" class="page">
-  <div class="card">
-    <p class="card-title">🏋️ Program Latihan Mingguan</p>
-    <p style="font-size:11px;color:var(--text-dim);margin:-6px 0 14px;">Ketuk hari untuk melihat detail gerakan & panduan set.</p>
-
-    <button class="day-btn" id="btn-senin" onclick="toggleDay('senin')">
-      <span>📅 Senin — Upper Body 1 (Pull)</span><i class="chevron">▼</i>
-    </button>
-    <div class="day-content" id="day-senin">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Pull-up / Chin-up</b><span><span class="sets-badge">3×8</span>Fokus latissimus dorsi / otot sayap</span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Push-up Tradisional</b><span><span class="sets-badge">3×15</span>Fokus dada & tricep</span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Dumbbell Row (1 Tangan)</b><span><span class="sets-badge">3×12</span>Penebalan otot punggung tengah</span></div></div>
-      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>DB Shoulder Press</b><span><span class="sets-badge">3×12</span>Membentuk bahu bulat & lebar</span></div></div>
+    <div class="sensor-card">
+      <div class="sc-top">
+        <div><div class="sc-label">💧 DO (Oksigen)</div><div class="sc-value" id="valDo">—<span class="sc-unit">mg/L</span></div></div>
+        <span class="sc-status offline" id="statusDo">OFFLINE</span>
+      </div>
+      <div class="sc-updated" id="updatedDo">Menunggu data...</div>
     </div>
-
-    <button class="day-btn" id="btn-selasa" onclick="toggleDay('selasa')">
-      <span>📅 Selasa — Lower Body & Core</span><i class="chevron">▼</i>
-    </button>
-    <div class="day-content" id="day-selasa">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Bodyweight Squat</b><span><span class="sets-badge">3×20</span>Fokus paha depan & glutes</span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Bulgarian Split Squat</b><span><span class="sets-badge">3×10/kaki</span>Kekuatan & keseimbangan unilateral</span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Sit-up Terkontrol</b><span><span class="sets-badge">3×20</span>Pembentukan otot perut tengah</span></div></div>
-      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>Plank Statis</b><span><span class="sets-badge">3×45 detik</span>Penguatan core, penting untuk lambung</span></div></div>
-    </div>
-
-    <button class="day-btn" id="btn-rabu" onclick="toggleDay('rabu')">
-      <span>😴 Rabu — Rest Day (Pemulihan)</span><i class="chevron">▼</i>
-    </button>
-    <div class="day-content" id="day-rabu">
-      <div class="rest-day"><div class="ri">😴</div><p><b>Istirahat Penuh</b><br>Tidak ada angkat beban. Fokus pemulihan energi, istirahat sendi, dan jaga pola makan agar asam lambung stabil.</p></div>
-    </div>
-
-    <button class="day-btn" id="btn-kamis" onclick="toggleDay('kamis')">
-      <span>📅 Kamis — Upper Body 2 (Push)</span><i class="chevron">▼</i>
-    </button>
-    <div class="day-content" id="day-kamis">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Chin-up (Underhand Grip)</b><span><span class="sets-badge">3×8</span>Fokus bicep & punggung bawah</span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Incline Push-up</b><span><span class="sets-badge">3×12</span>Target dada bagian atas agar bidang</span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Dumbbell Bicep Curl</b><span><span class="sets-badge">3×15</span>Isolasi pembesaran lengan depan</span></div></div>
-      <div class="workout-item"><div class="workout-num">4</div><div class="workout-text"><b>Chair Dips</b><span><span class="sets-badge">3×15</span>Memahat otot tricep lengan belakang</span></div></div>
-    </div>
-
-    <button class="day-btn" id="btn-jumat" onclick="toggleDay('jumat')">
-      <span>📅 Jumat — Lower Body Power</span><i class="chevron">▼</i>
-    </button>
-    <div class="day-content" id="day-jumat">
-      <div class="workout-item"><div class="workout-num">1</div><div class="workout-text"><b>Goblet Squat (Dumbbell)</b><span><span class="sets-badge">3×15</span>Squat penuh dengan beban, fokus quad & core</span></div></div>
-      <div class="workout-item"><div class="workout-num">2</div><div class="workout-text"><b>Walking Lunges</b><span><span class="sets-badge">3×12 langkah</span>Kekuatan paha & ketahanan fisik</span></div></div>
-      <div class="workout-item"><div class="workout-num">3</div><div class="workout-text"><b>Lying Leg Raises</b><span><span class="sets-badge">3×15</span>Target otot perut bagian bawah</span></div></div>
-    </div>
-
-    <button class="day-btn" id="btn-weekend" onclick="toggleDay('weekend')">
-      <span>🔄 Sabtu & Minggu — Evaluasi & Pemulihan</span><i class="chevron">▼</i>
-    </button>
-    <div class="day-content" id="day-weekend">
-      <div class="rest-day"><div class="ri">⚖️</div><p><b>Evaluasi Akhir Minggu</b><br>Istirahat dari beban berat. Catat berat badan pagi hari di tab Progress untuk evaluasi surplus kalori mingguan.</p></div>
+    <div class="sensor-card">
+      <div class="sc-top">
+        <div><div class="sc-label">🌫️ TDS</div><div class="sc-value" id="valTds">—<span class="sc-unit">ppm</span></div></div>
+        <span class="sc-status offline" id="statusTds">OFFLINE</span>
+      </div>
+      <div class="sc-updated" id="updatedTds">Menunggu data...</div>
     </div>
   </div>
+
+  <!-- pH trend chart -->
+  <div class="card" style="margin-top:13px;">
+    <p class="card-title">📈 Tren pH (24 Jam Terakhir)</p>
+    <div class="chart-wrap"><canvas id="phChart"></canvas></div>
+    <div class="empty-state" id="chartEmpty" style="display:none;">
+      <div class="ei">📡</div>
+      <p>Belum ada data history. Grafik akan muncul otomatis<br>begitu sensor mulai mengirim data.</p>
+    </div>
+  </div>
+
+  <!-- Quick link to prediction -->
+  <a href="prediction.html" class="card" style="display:block;text-decoration:none;color:inherit;">
+    <p class="card-title" style="margin-bottom:4px;">🔮 Prediksi & Early Warning →</p>
+    <p style="font-size:12px;color:var(--text-dim);margin:0;">Lihat proyeksi tren pH dan estimasi waktu sebelum kondisi tidak aman.</p>
+  </a>
+
 </div>
 
-<!-- Bottom Nav -->
 <div class="bottom-nav">
-  <button class="nav-item active" id="nav-jadwal" onclick="switchTab('jadwal',this)">
-    <span class="ni">📅</span>Jadwal
-  </button>
-  <button class="nav-item" id="nav-progress" onclick="switchTab('progress',this)">
-    <span class="ni">📈</span>Progress
-  </button>
-  <button class="nav-item" id="nav-latihan" onclick="switchTab('latihan',this)">
-    <span class="ni">🏋️</span>Program
-  </button>
+  <a href="index.html" class="nav-item active"><span class="ni">📊</span>Dashboard</a>
+  <a href="history.html" class="nav-item"><span class="ni">📋</span>History</a>
+  <a href="prediction.html" class="nav-item"><span class="ni">🔮</span>Prediksi</a>
+  <a href="settings.html" class="nav-item"><span class="ni">⚙️</span>Settings</a>
 </div>
 
-<script src="script.js"></script>
+<script src="app.js"></script>
+<script>
+const { PATHS, FIELD_MAP } = window.AQUA_CONFIG;
+let phChart = null;
+let lastSensorTimestamp = null;
+
+function onAuthReady() {
+  loadChartHistory();
+  setInterval(refreshConnectionStatus, 15000);
+}
+
+function onLiveSensorUpdate(val) {
+  renderSensorCards(val);
+  refreshConnectionStatus();
+}
+
+function renderSensorCards(val) {
+  if (!val) return;
+  const ph   = Number(val[FIELD_MAP.ph]);
+  const suhu = Number(val[FIELD_MAP.suhu]);
+  const doo  = Number(val[FIELD_MAP.do]);
+  const tds  = Number(val[FIELD_MAP.tds]);
+  const ts   = val[FIELD_MAP.timestamp] ? Number(val[FIELD_MAP.timestamp]) : Date.now();
+  lastSensorTimestamp = ts;
+
+  setCard('Ph', ph, '', 2);
+  setCard('Suhu', suhu, '°C', 1);
+  setCard('Do', doo, 'mg/L', 1);
+  setCard('Tds', tds, 'ppm', 0);
+
+  document.getElementById('lastUpdateText').textContent = formatDateTime(ts);
+
+  const statuses = ['ph','suhu','do','tds'].map(p => evaluateStatus(p, val[FIELD_MAP[p]]));
+  const overall = statuses.includes('danger') ? 'danger' : statuses.includes('warn') ? 'warn' : 'normal';
+  const pill = document.getElementById('pillOverall');
+  pill.textContent = overall === 'danger' ? '🚨 BAHAYA' : overall === 'warn' ? '⚠️ WASPADA' : '✅ NORMAL';
+  pill.className = 'pill ' + (overall === 'normal' ? 'ok' : 'pending');
+}
+
+function setCard(suffix, value, unit, decimals) {
+  const valEl = document.getElementById('val' + suffix);
+  const statusEl = document.getElementById('status' + suffix);
+  const updEl = document.getElementById('updated' + suffix);
+  const param = suffix.toLowerCase();
+
+  if (isNaN(value)) {
+    valEl.innerHTML = `—<span class="sc-unit">${unit}</span>`;
+    statusEl.textContent = 'OFFLINE'; statusEl.className = 'sc-status offline';
+    return;
+  }
+  valEl.innerHTML = `${value.toFixed(decimals)}<span class="sc-unit">${unit}</span>`;
+  const status = evaluateStatus(param, value);
+  statusEl.textContent = statusLabel(status);
+  statusEl.className = 'sc-status ' + status;
+  updEl.textContent = 'Update: ' + timeAgo(lastSensorTimestamp);
+}
+
+function refreshConnectionStatus() {
+  const offline = isSensorOffline();
+  const pill = document.getElementById('pillConn');
+  pill.textContent = offline ? '📵 Offline' : '🟢 Terhubung';
+  pill.className = 'pill ' + (offline ? 'off' : 'ok');
+
+  if (offline) {
+    ['Ph','Suhu','Do','Tds'].forEach(s => {
+      document.getElementById('status'+s).textContent = 'OFFLINE';
+      document.getElementById('status'+s).className = 'sc-status offline';
+    });
+  }
+  // Update "x menit lalu" text live
+  if (lastSensorTimestamp) {
+    ['Ph','Suhu','Do','Tds'].forEach(s => {
+      const el = document.getElementById('updated'+s);
+      if (el && !offline) el.textContent = 'Update: ' + timeAgo(lastSensorTimestamp);
+    });
+  }
+}
+
+// ── Chart: load history for pH trend ──────────────────────────
+function loadChartHistory() {
+  rtdb.ref(PATHS.sensorHistory).limitToLast(100).once('value')
+    .then(snap => {
+      const data = [];
+      snap.forEach(child => {
+        const v = child.val();
+        if (v && v[FIELD_MAP.ph] !== undefined) {
+          data.push({ t: v[FIELD_MAP.timestamp] || Date.now(), ph: Number(v[FIELD_MAP.ph]) });
+        }
+      });
+      if (data.length === 0) {
+        document.getElementById('chartEmpty').style.display = 'block';
+        return;
+      }
+      renderChart(data);
+    })
+    .catch(err => {
+      console.error('History load error:', err);
+      document.getElementById('chartEmpty').style.display = 'block';
+    });
+}
+
+function renderChart(data) {
+  const ctx = document.getElementById('phChart');
+  const labels = data.map(d => new Date(d.t).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}));
+  const values = data.map(d => d.ph);
+  const t = window.currentThresholds.ph;
+
+  if (phChart) phChart.destroy();
+  phChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'pH', data: values, borderColor: '#00c2a8',
+        backgroundColor: 'rgba(0,194,168,.12)', fill: true, tension: 0.35,
+        pointRadius: 0, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#5f7587', maxTicksLimit: 6 }, grid: { color: '#1c2a35' } },
+        y: { min: (t.danger_min - 1), max: (t.danger_max + 1),
+             ticks: { color: '#5f7587' }, grid: { color: '#1c2a35' } }
+      }
+    }
+  });
+}
+</script>
 </body>
 </html>
