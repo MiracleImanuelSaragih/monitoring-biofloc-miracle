@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>History — AQUA SENTINEL</title>
+<title>History — BIOFLOC MONITORING</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link rel="stylesheet" href="style.css">
@@ -14,13 +14,13 @@
 </head>
 <body class="hidden">
 
-<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">AQUA <span>SENTINEL</span></p></div>
+<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">BIOFLOC <span>MONITORING</span></p></div>
 <div id="toast"></div>
 <div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
 
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
@@ -160,9 +160,9 @@ function loadAlertLog() {
         <div class="status-row">
           <div>
             <div style="font-size:13px;font-weight:600;color:${it.type==='danger'?'var(--danger)':'var(--warn)'};">${escHtml(it.title||'Peringatan')}</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${escHtml(it.message||'')}</div>
+            <div style="font-size:13px;color:var(--text-dim);margin-top:2px;">${escHtml(it.message||'')}</div>
           </div>
-          <div style="font-size:10px;color:var(--text-dim);white-space:nowrap;margin-left:8px;">${timeAgo(it.timestamp)}</div>
+          <div style="font-size:12px;color:var(--text-dim);white-space:nowrap;margin-left:8px;">${timeAgo(it.timestamp)}</div>
         </div>
       `).join('');
     })

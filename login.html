@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Login — AQUA SENTINEL</title>
+<title>Login — BIOFLOC MONITORING</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -31,10 +31,10 @@ body::before{
 }
 .wave-decor{position:fixed;bottom:0;left:0;right:0;height:160px;opacity:.18;pointer-events:none;z-index:0;}
 .logo-area{text-align:center;margin-bottom:30px;animation:slideDown .5s ease-out;position:relative;z-index:1;}
-.logo-icon{font-size:48px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 0 18px rgba(0,194,168,.55));}
-.logo-title{font-family:'Barlow Condensed',sans-serif;font-size:27px;font-weight:900;letter-spacing:2.5px;}
+.logo-icon{font-size:58px;line-height:1;margin-bottom:8px;filter:drop-shadow(0 0 18px rgba(0,194,168,.55));}
+.logo-title{font-family:'Barlow Condensed',sans-serif;font-size:34px;font-weight:900;letter-spacing:2.5px;}
 .logo-title span{color:var(--accent);}
-.logo-sub{font-size:10.5px;color:var(--text-dim);letter-spacing:1.2px;margin-top:5px;line-height:1.5;}
+.logo-sub{font-size:13px;color:var(--text-dim);letter-spacing:1.2px;margin-top:7px;line-height:1.6;}
 
 .login-card{
   background:var(--card); border:1px solid var(--border); border-radius:20px;
@@ -45,19 +45,19 @@ body::before{
 .tab-btn{flex:1;background:none;border:none;padding:9px;border-radius:8px;color:var(--text-dim);font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
 .tab-btn.active{background:var(--accent);color:#04231f;}
 .form-group{margin-bottom:13px;}
-.form-label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;color:var(--text-dim);margin-bottom:5px;text-transform:uppercase;}
-.form-input{width:100%;padding:12px 15px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;transition:all .2s;}
+.form-label{display:block;font-size:13px;font-weight:600;letter-spacing:1px;color:var(--text-dim);margin-bottom:5px;text-transform:uppercase;}
+.form-input{width:100%;padding:12px 15px;background:var(--input-bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;transition:all .2s;}
 .form-input:focus{outline:none;border-color:var(--accent);background:rgba(0,194,168,.04);box-shadow:0 0 0 3px rgba(0,194,168,.1);}
 .pw-wrap{position:relative;}
 .pw-toggle{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:17px;}
-.btn-submit{width:100%;background:var(--accent);color:#04231f;border:none;padding:14px;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:800;letter-spacing:1.3px;cursor:pointer;transition:all .2s;margin-top:5px;}
+.btn-submit{width:100%;background:var(--accent);color:#04231f;border:none;padding:14px;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1.3px;cursor:pointer;transition:all .2s;margin-top:5px;}
 .btn-submit:hover{filter:brightness(1.08);transform:translateY(-1px);}
 .btn-submit:disabled{background:#2d2d3f;color:var(--text-dim);cursor:not-allowed;transform:none;}
 .status-msg{margin-top:13px;padding:10px 13px;border-radius:8px;font-size:13px;text-align:center;display:none;}
 .status-msg.error{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);display:block;}
 .status-msg.success{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.3);display:block;}
 .spinner{width:18px;height:18px;border:2px solid rgba(4,35,31,.3);border-top-color:#04231f;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:7px;}
-.register-note{font-size:11px;color:var(--text-dim);text-align:center;margin-top:14px;line-height:1.6;}
+.register-note{font-size:13px;color:var(--text-dim);text-align:center;margin-top:14px;line-height:1.6;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-16px);}to{opacity:1;transform:translateY(0);}}
 @keyframes slideUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
@@ -71,7 +71,7 @@ body::before{
 
 <div class="logo-area">
   <div class="logo-icon">🐟</div>
-  <h1 class="logo-title">AQUA <span>SENTINEL</span></h1>
+  <h1 class="logo-title">BIOFLOC <span>MONITORING</span></h1>
   <p class="logo-sub">REAL-TIME WATER QUALITY MONITORING<br>BIOFLOK NILA &middot; PREDIKSI pH &middot; EARLY WARNING SYSTEM</p>
 </div>
 

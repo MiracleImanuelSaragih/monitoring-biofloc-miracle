@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-//  AQUA SENTINEL — config.js
+//  BIOFLOC MONITORING — config.js
 //  SEMUA bagian yang perlu kamu SESUAIKAN ada di file ini.
 //  File lain (app.js, dashboard.js, dst) TIDAK perlu diubah.
 // ════════════════════════════════════════════════════════════

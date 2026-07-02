@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Settings — AQUA SENTINEL</title>
+<title>Settings — BIOFLOC MONITORING</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link rel="stylesheet" href="style.css">
@@ -14,13 +14,13 @@
 </head>
 <body class="hidden">
 
-<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">AQUA <span>SENTINEL</span></p></div>
+<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">BIOFLOC <span>MONITORING</span></p></div>
 <div id="toast"></div>
 <div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
 
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
@@ -44,7 +44,7 @@
   <!-- Threshold settings -->
   <div class="card">
     <p class="card-title">🎯 Pengaturan Ambang Batas (Threshold)</p>
-    <p style="font-size:11px;color:var(--text-dim);margin:-6px 0 14px;">
+    <p style="font-size:13px;color:var(--text-dim);margin:-6px 0 14px;">
       Batas <b>Waspada</b> = mulai keluar rentang ideal. Batas <b>Bahaya</b> = kondisi kritis perlu tindakan segera.
     </p>
 
@@ -59,19 +59,19 @@
   <!-- Firebase connection guide -->
   <div class="card">
     <p class="card-title">🔗 Koneksi Sumber Data Sensor</p>
-    <p style="font-size:12px;color:var(--text-dim);line-height:1.7;">
+    <p class="info-box">
       Saat ini sensor <b>belum mengirim data</b> ke proyek Firebase ini. Untuk menghubungkan sensor (milikmu sendiri
       atau punya Firebase teman yang sudah berjalan), edit file <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;">config.js</code>
       di project web ini:
     </p>
-    <ol style="font-size:12px;color:var(--text-dim);line-height:1.9;padding-left:20px;margin-top:8px;">
+    <ol style="font-size:14px;color:var(--text-dim);line-height:1.9;padding-left:20px;margin-top:8px;">
       <li>Cek di Firebase Console punya teman: <b>Realtime Database</b> atau <b>Firestore</b>? (lihat menu kiri).</li>
       <li>Minta teman menambahkanmu sebagai <b>member project</b> di Project Settings → Users and permissions.</li>
       <li>Salin <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;">firebaseConfig</code> milik teman, ganti bagian <b>FIREBASE_CONFIG</b> di <code>config.js</code>.</li>
       <li>Cek struktur datanya di tab Realtime Database (pohon data), lalu sesuaikan bagian <b>PATHS</b> & <b>FIELD_MAP</b> di <code>config.js</code> supaya namanya cocok.</li>
       <li>Refresh web ini — data sensor akan otomatis muncul di Dashboard.</li>
     </ol>
-    <p style="font-size:11px;color:var(--text-dim);margin-top:10px;">
+    <p style="font-size:13px;color:var(--text-dim);margin-top:10px;">
       Lihat komentar lengkap & contoh di bagian atas file <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;">config.js</code>.
     </p>
   </div>
@@ -120,14 +120,14 @@ function renderThresholdForm(thresholds) {
     const t = thresholds[p] || DEFAULT_THRESHOLDS[p];
     html += `
       <div class="thresh-group">
-        <div class="tg-title">${m.label} <span style="font-size:11px;color:var(--text-dim);">(${m.unit||'-'})</span></div>
-        <p style="font-size:10px;color:var(--text-dim);margin-bottom:6px;">Rentang Normal</p>
+        <div class="tg-title">${m.label} <span style="font-size:13px;color:var(--text-dim);">(${m.unit||'-'})</span></div>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Rentang Normal</p>
         <div class="thresh-range">
           <input type="number" step="0.1" id="${p}_min" value="${t.min}" placeholder="Min">
           <span class="tr-sep">—</span>
           <input type="number" step="0.1" id="${p}_max" value="${t.max}" placeholder="Max">
         </div>
-        <p style="font-size:10px;color:var(--text-dim);margin:10px 0 6px;">Batas Bahaya (di luar ini = kritis)</p>
+        <p style="font-size:12px;color:var(--text-dim);margin:10px 0 6px;">Batas Bahaya (di luar ini = kritis)</p>
         <div class="thresh-range">
           <input type="number" step="0.1" id="${p}_danger_min" value="${t.danger_min}" placeholder="Min Bahaya">
           <span class="tr-sep">—</span>

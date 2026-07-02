@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════
-//  AQUA SENTINEL — app.js
+//  BIOFLOC MONITORING — app.js
 //  Logic bersama: Auth, Firebase init, EWS engine, notifikasi.
 //  Dipakai di semua halaman (dashboard, history, prediction, settings).
 // ════════════════════════════════════════════════════════════
@@ -221,7 +221,7 @@ function requestNotif() {
     updateBellUI();
     if (perm === 'granted') {
       showToast('✅ Notifikasi EWS diaktifkan!');
-      new Notification('🔔 Aqua Sentinel', { body: 'Kamu akan menerima peringatan dini kualitas air kolam.' });
+      new Notification('🔔 Biofloc Monitoring', { body: 'Kamu akan menerima peringatan dini kualitas air kolam.' });
     } else {
       showToast('⚠️ Izin notifikasi ditolak.', true);
     }

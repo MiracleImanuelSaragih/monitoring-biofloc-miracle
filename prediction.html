@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Prediksi pH — AQUA SENTINEL</title>
+<title>Prediksi pH — BIOFLOC MONITORING</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link rel="stylesheet" href="style.css">
@@ -15,13 +15,13 @@
 </head>
 <body class="hidden">
 
-<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">AQUA <span>SENTINEL</span></p></div>
+<div id="authGate"><div class="ag-spin"></div><p class="ag-ttl">BIOFLOC <span>MONITORING</span></p></div>
 <div id="toast"></div>
 <div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
 
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
@@ -53,7 +53,7 @@
       <div class="ei">📊</div>
       <p>Belum cukup data untuk membuat grafik proyeksi.<br>Minimal <b id="minPointsText">8</b> titik data dibutuhkan.</p>
     </div>
-    <p style="font-size:11px;color:var(--text-dim);margin-top:10px;line-height:1.5;">
+    <p style="font-size:13px;color:var(--text-dim);margin-top:10px;line-height:1.5;">
       <b>Garis solid</b> = data aktual pH. <b>Garis putus-putus</b> = proyeksi tren ke depan.
     </p>
   </div>
@@ -61,19 +61,19 @@
   <!-- Methodology explanation -->
   <div class="card">
     <p class="card-title">🧠 Tentang Metode Prediksi</p>
-    <div id="methodExplain" style="font-size:12px;color:var(--text-dim);line-height:1.7;"></div>
+    <div id="methodExplain" style="font-size:14px;color:var(--text-dim);line-height:1.7;"></div>
   </div>
 
   <!-- Upgrade to RF instructions -->
   <div class="card">
     <p class="card-title">⬆️ Upgrade ke Random Forest (Opsional)</p>
-    <p style="font-size:12px;color:var(--text-dim);line-height:1.7;">
+    <p class="info-box">
       Saat data history sudah cukup banyak (disarankan 200+ baris, mencakup variasi kondisi normal & tidak normal),
       kamu bisa melatih model <b>Random Forest Regressor</b> di Python menggunakan data dari halaman History (export CSV).
       Setelah model dilatih, buat script Python kecil yang berjalan periodik (misal tiap 1 jam via cron/scheduler) untuk
       menghitung prediksi dan menulis hasilnya ke path Firebase:
-      <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;font-size:11px;">predictions/ph_forecast</code>
-      dengan format <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;font-size:11px;">{predicted_ph, hours_ahead, generated_at}</code>.
+      <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;font-size:13px;">predictions/ph_forecast</code>
+      dengan format <code style="background:var(--bg-input);padding:2px 6px;border-radius:5px;font-size:13px;">{predicted_ph, hours_ahead, generated_at}</code>.
       Web ini <b>otomatis akan memakai hasil Random Forest tersebut</b> dan berhenti memakai metode regresi tren sederhana — tidak perlu mengubah kode web sama sekali.
     </p>
   </div>

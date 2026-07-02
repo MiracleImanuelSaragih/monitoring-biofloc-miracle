@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>Dashboard — AQUA SENTINEL</title>
+<title>Dashboard — BIOFLOC MONITORING</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#00c2a8"/>
 <link rel="stylesheet" href="style.css">
@@ -17,7 +17,7 @@
 
 <div id="authGate">
   <div class="ag-spin"></div>
-  <p class="ag-ttl">AQUA <span>SENTINEL</span></p>
+  <p class="ag-ttl">BIOFLOC <span>MONITORING</span></p>
 </div>
 
 <div id="toast"></div>
@@ -25,7 +25,7 @@
 
 <div class="header">
   <div class="header-left">
-    <h2 class="header-title">AQUA <span>SENTINEL</span></h2>
+    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
     <span class="user-badge" id="userBadge">—</span>
   </div>
   <div class="header-right">
@@ -98,9 +98,9 @@
   </div>
 
   <!-- Quick link to prediction -->
-  <a href="prediction.html" class="card" style="display:block;text-decoration:none;color:inherit;">
-    <p class="card-title" style="margin-bottom:4px;">🔮 Prediksi & Early Warning →</p>
-    <p style="font-size:12px;color:var(--text-dim);margin:0;">Lihat proyeksi tren pH dan estimasi waktu sebelum kondisi tidak aman.</p>
+  <a href="prediction.html" class="quick-link-card">
+    <p class="qlc-title">🔮 Prediksi & Early Warning →</p>
+    <p class="qlc-sub">Lihat proyeksi tren pH dan estimasi waktu sebelum kondisi tidak aman.</p>
   </a>
 
 </div>
@@ -153,17 +153,23 @@ function renderSensorCards(val) {
 }
 
 function setCard(suffix, value, unit, decimals) {
-  const valEl = document.getElementById('val' + suffix);
+  const valEl    = document.getElementById('val' + suffix);
   const statusEl = document.getElementById('status' + suffix);
-  const updEl = document.getElementById('updated' + suffix);
-  const param = suffix.toLowerCase();
+  const updEl    = document.getElementById('updated' + suffix);
+  const param    = suffix.toLowerCase();
 
   if (isNaN(value)) {
-    valEl.innerHTML = `—<span class="sc-unit">${unit}</span>`;
-    statusEl.textContent = 'OFFLINE'; statusEl.className = 'sc-status offline';
+    // Tampilkan teks "Menunggu data..." bukan karakter — yang terlihat seperti strip
+    valEl.innerHTML = '';
+    valEl.className = 'sc-value offline-val';
+    valEl.textContent = 'Menunggu data...';
+    statusEl.textContent = 'OFFLINE';
+    statusEl.className = 'sc-status offline';
     return;
   }
-  valEl.innerHTML = `${value.toFixed(decimals)}<span class="sc-unit">${unit}</span>`;
+
+  valEl.className = 'sc-value';
+  valEl.innerHTML = `${value.toFixed(decimals)}<span class="sc-unit">&nbsp;${unit}</span>`;
   const status = evaluateStatus(param, value);
   statusEl.textContent = statusLabel(status);
   statusEl.className = 'sc-status ' + status;
