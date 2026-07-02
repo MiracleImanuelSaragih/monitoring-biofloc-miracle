@@ -1,4 +1,4 @@
-const CACHE = 'aqua-sentinel-v1';
+const CACHE = 'biofloc-monitoring-v1';
 const ASSETS = [
   './', './index.html', './login.html', './history.html', './prediction.html', './settings.html',
   './style.css', './app.js', './config.js', './manifest.json',
