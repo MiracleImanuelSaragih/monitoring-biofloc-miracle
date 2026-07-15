@@ -14,6 +14,25 @@ if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const rtdb = firebase.database();
 
+// ── Theme (Terang / Gelap) ──────────────────────────────────
+function initTheme() {
+  const saved = localStorage.getItem('aqua_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  updateThemeToggleUI(saved);
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('aqua_theme', next);
+  updateThemeToggleUI(next);
+}
+function updateThemeToggleUI(theme) {
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = theme === 'light' ? '🌙' : '☀️';
+}
+document.addEventListener('DOMContentLoaded', initTheme);
+
 // ── Toast ────────────────────────────────────────────────────
 function showToast(msg, isError = false) {
   const t = document.getElementById('toast');
