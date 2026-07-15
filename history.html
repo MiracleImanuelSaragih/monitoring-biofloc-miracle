@@ -18,17 +18,34 @@
 <div id="toast"></div>
 <div class="offline-bar" id="offlineBar">📵 Mode Offline</div>
 
-<div class="header">
-  <div class="header-left">
-    <h2 class="header-title">BIOFLOC <span>MONITORING</span></h2>
-    <span class="user-badge" id="userBadge">—</span>
-  </div>
-  <div class="header-right">
-    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙</button>
-    <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
-    <button class="logout-btn" onclick="doLogout()">Keluar</button>
-  </div>
-</div>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="sidebar-icon">🐟</span>
+      <div>
+        <div class="sidebar-title">BIOFLOC</div>
+        <div class="sidebar-subtitle">MONITORING</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html" class="nav-item"><span class="ni">📊</span>Dashboard</a>
+      <a href="history.html" class="nav-item active"><span class="ni">📋</span>History</a>
+      <a href="prediction.html" class="nav-item"><span class="ni">🔮</span>Prediksi</a>
+      <a href="settings.html" class="nav-item"><span class="ni">⚙️</span>Settings</a>
+    </nav>
+  </aside>
+
+  <div class="main-area">
+    <div class="header">
+      <div class="header-left">
+        <span class="user-badge" id="userBadge">—</span>
+      </div>
+      <div class="header-right">
+        <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙</button>
+        <button class="bell-btn bell-off" id="bellBtn" onclick="requestNotif()">🔕</button>
+        <button class="logout-btn" onclick="doLogout()">Keluar</button>
+      </div>
+    </div>
 
 <div class="page-content">
 
@@ -55,13 +72,8 @@
     </div>
   </div>
 
-</div>
-
-<div class="bottom-nav">
-  <a href="index.html" class="nav-item"><span class="ni">📊</span>Dashboard</a>
-  <a href="history.html" class="nav-item active"><span class="ni">📋</span>History</a>
-  <a href="prediction.html" class="nav-item"><span class="ni">🔮</span>Prediksi</a>
-  <a href="settings.html" class="nav-item"><span class="ni">⚙️</span>Settings</a>
+    </div>
+  </div>
 </div>
 
 <script src="app.js"></script>
